@@ -1,6 +1,6 @@
 # CV Fitter Chrome Extension — High-Level Project Structure
 
-> Generated from: `project-overview.md`, `wxt-anthropic-rules.md`, `wxt-react-rules.md`
+> Generated from: `project-overview.md`, `wxt-ai-rules.md`, `wxt-react-rules.md`
 
 ---
 
@@ -212,7 +212,7 @@ sequenceDiagram
 | Rule | Where enforced |
 |---|---|
 | API key **never** in browser | Only in `server/.env` → `ModelService` |
-| Vercel AI SDK called **only** on server | `model.service.ts` — never in extension code |
+| Vercel AI SDK called **only** on server | `model.service.ts` — never in extension code (`wxt-ai-rules.md`) |
 | Provider swappable via env var | `MODEL_PROVIDER` + `MODEL_NAME` in `server/.env` |
 | Max **300 lines per file** | All modules in `services/`, `agents/` |
 | **Zod** validates all LLM responses | `extension/utils/validation.ts` |
