@@ -15,6 +15,15 @@
 - Use `interface` for data shapes, `class` for stateful services.
 - Export only what is needed — keep internals private.
 - Prefer named exports over default exports for better refactoring.
+- **Service decomposition pattern** — split complex services into focused sub-files:
+  ```
+  model.constants.ts  ← env-driven config & shared types
+  model.errors.ts     ← error classes (no deps)
+  model.builder.ts    ← factory/builder functions
+  model.types.ts      ← shared interfaces (in types/)
+  model.service.ts    ← class logic only, imports from above
+  ```
+  Avoids circular deps: errors → constants → types → builder → service.
 
 ### TypeScript
 - Strict mode enabled (`"strict": true` in tsconfig).
@@ -68,7 +77,20 @@
 | `anthropic` | `@ai-sdk/anthropic` | `claude-sonnet-4-6` |
 | `openai` | `@ai-sdk/openai` | `gpt-4o` |
 | `google` | `@ai-sdk/google` | `gemini-2.0-flash` |
-| `ollama` | `@ai-sdk/ollama` | `llama3.2` |
+| `ollama` | `ollama-ai-provider-v2` | `llama3.2` |
+
+> **Note:** `@ai-sdk/ollama` does **not** exist on npm. Use `ollama-ai-provider-v2` (community provider). Import as `import { ollama } from "ollama-ai-provider-v2"`.
+
+### Env-Driven Constants
+- **Never hardcode model names or retry config** in service files. All tuneable values live in `model.constants.ts` and are read from env with in-code defaults:
+  ```
+  MODEL_PROVIDER, MODEL_NAME            ← primary provider/model
+  FALLBACK_MODEL_PROVIDER, FALLBACK_MODEL_NAME  ← cross-provider fallback
+  ANTHROPIC_DEFAULT_MODEL, OPENAI_DEFAULT_MODEL, GOOGLE_DEFAULT_MODEL, OLLAMA_DEFAULT_MODEL
+  ANTHROPIC_FALLBACK_MODEL, OPENAI_FALLBACK_MODEL, GOOGLE_FALLBACK_MODEL, OLLAMA_FALLBACK_MODEL
+  RETRY_MAX_ATTEMPTS, RETRY_BASE_BACKOFF_MS, RETRY_MAX_BACKOFF_MS
+  ```
+- Use `||` (not `??`) when an empty-string env value should be treated as "not set" (e.g., disabling an optional fallback). Use `??` only when empty string is a valid value.
 
 ---
 

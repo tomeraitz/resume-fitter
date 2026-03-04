@@ -27,11 +27,7 @@ File path: `server/.env.example`
 MODEL_PROVIDER=anthropic
 
 # Model name for the primary provider.
-# Defaults are applied in ModelService if this is omitted.
-# anthropic default : claude-sonnet-4-6
-# openai default    : gpt-4o
-# google default    : gemini-2.0-flash
-# ollama default    : llama3.2
+# Defaults are applied in model.constants.ts if this is omitted (see below).
 MODEL_NAME=claude-sonnet-4-6
 
 # ─── Fallback LLM Provider ───────────────────────────────────────────────────
@@ -53,6 +49,31 @@ GOOGLE_GENERATIVE_AI_API_KEY=AIza...
 # Base URL for a locally running Ollama instance.
 # Only required when MODEL_PROVIDER=ollama or FALLBACK_MODEL_PROVIDER=ollama.
 OLLAMA_BASE_URL=http://localhost:11434
+
+# ─── Default Models Per Provider (model.constants.ts) ────────────────────────
+# Used when MODEL_NAME is not set. These override the hardcoded fallbacks in
+# model.constants.ts so you can change defaults without a code change.
+ANTHROPIC_DEFAULT_MODEL=claude-sonnet-4-6
+OPENAI_DEFAULT_MODEL=gpt-4o
+GOOGLE_DEFAULT_MODEL=gemini-2.0-flash
+OLLAMA_DEFAULT_MODEL=llama3.2
+
+# ─── Same-Provider Fallback Models (model.constants.ts) ──────────────────────
+# Used when FALLBACK_MODEL_PROVIDER is not set (implicit same-provider fallback).
+# Set to empty string to disable same-provider fallback for that provider.
+# ollama has no default same-provider fallback (leave unset to keep it disabled).
+ANTHROPIC_FALLBACK_MODEL=claude-haiku-4-5
+OPENAI_FALLBACK_MODEL=gpt-4o-mini
+GOOGLE_FALLBACK_MODEL=gemini-2.0-flash-lite
+# OLLAMA_FALLBACK_MODEL=   # unset = disabled
+
+# ─── Retry Configuration (model.constants.ts) ────────────────────────────────
+# RETRY_MAX_ATTEMPTS   : retries after the initial attempt (default: 2 → 3 total)
+# RETRY_BASE_BACKOFF_MS: initial backoff in ms, doubles each attempt (default: 100)
+# RETRY_MAX_BACKOFF_MS : backoff ceiling in ms (default: 4000)
+# RETRY_MAX_ATTEMPTS=2
+# RETRY_BASE_BACKOFF_MS=100
+# RETRY_MAX_BACKOFF_MS=4000
 
 # ─── Server ──────────────────────────────────────────────────────────────────
 PORT=3001
@@ -156,23 +177,37 @@ interface CompletionOptions {
 }
 ```
 
-### 4.3 Default Models Per Provider
+### 4.3 Constants File: `server/src/services/model.constants.ts`
+
+All previously hardcoded constants are defined here and read from environment variables with in-code defaults. This means **no code change is needed to adjust retry behaviour or default models** — only `.env` edits.
 
 ```typescript
-const DEFAULT_MODELS: Record<SupportedProvider, string> = {
-  anthropic: "claude-sonnet-4-6",
-  openai: "gpt-4o",
-  google: "gemini-2.0-flash",
-  ollama: "llama3.2",
+// ── Provider Types ──────────────────────────────────────────────────────────
+export type SupportedProvider = "anthropic" | "openai" | "google" | "ollama";
+
+// ── Retry Configuration ─────────────────────────────────────────────────────
+export const MAX_RETRIES        = Number(process.env["RETRY_MAX_ATTEMPTS"]    ?? "2");
+export const BASE_BACKOFF_MS    = Number(process.env["RETRY_BASE_BACKOFF_MS"] ?? "100");
+export const MAX_BACKOFF_MS     = Number(process.env["RETRY_MAX_BACKOFF_MS"]  ?? "4000");
+
+// ── Default Models Per Provider ─────────────────────────────────────────────
+export const DEFAULT_MODELS: Record<SupportedProvider, string> = {
+  anthropic: process.env["ANTHROPIC_DEFAULT_MODEL"] || "claude-sonnet-4-6",
+  openai:    process.env["OPENAI_DEFAULT_MODEL"]    || "gpt-4o",
+  google:    process.env["GOOGLE_DEFAULT_MODEL"]    || "gemini-2.0-flash",
+  ollama:    process.env["OLLAMA_DEFAULT_MODEL"]    || "llama3.2",
 };
 
-const SAME_PROVIDER_FALLBACK_MODELS: Record<SupportedProvider, string | null> = {
-  anthropic: "claude-haiku-4-5",
-  openai: "gpt-4o-mini",
-  google: "gemini-2.0-flash-lite",
-  ollama: null, // no cheaper local fallback; skip same-provider fallback
+// ── Same-Provider Fallback Models ───────────────────────────────────────────
+export const FALLBACK_MODELS: Record<SupportedProvider, string | null> = {
+  anthropic: process.env["ANTHROPIC_FALLBACK_MODEL"] || "claude-haiku-4-5",
+  openai:    process.env["OPENAI_FALLBACK_MODEL"]    || "gpt-4o-mini",
+  google:    process.env["GOOGLE_FALLBACK_MODEL"]    || "gemini-2.0-flash-lite",
+  ollama:    process.env["OLLAMA_FALLBACK_MODEL"]    || null,
 };
 ```
+
+`||` (not `??`) is used intentionally: an empty string env value (`OLLAMA_FALLBACK_MODEL=`) is treated as "not set", falling through to the in-code default (or `null` for ollama).
 
 ### 4.4 Pseudocode / Annotated Structure
 
@@ -192,7 +227,7 @@ const BASE_BACKOFF_MS = 100;
 const MAX_BACKOFF_MS = 4_000;
 
 const DEFAULT_MODELS: Record<SupportedProvider, string> = { ... };
-const SAME_PROVIDER_FALLBACK_MODELS: Record<SupportedProvider, string | null> = { ... };
+const FALLBACK_MODELS: Record<SupportedProvider, string | null> = { ... };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -252,7 +287,7 @@ export class ModelService {
     //   - If FALLBACK_MODEL_PROVIDER is set but its API key is missing:
     //     logs a warning, sets fallbackConfig = null (graceful degradation).
     //   - If FALLBACK_MODEL_PROVIDER is not set:
-    //     derives same-provider fallback from SAME_PROVIDER_FALLBACK_MODELS.
+    //     derives same-provider fallback from FALLBACK_MODELS.
     //     If the provider has no same-provider fallback (ollama), sets fallbackConfig = null.
 
   async complete(systemPrompt: string, userPrompt: string): Promise<string>
@@ -371,7 +406,8 @@ All paths are relative to the monorepo root. These are **minimal stubs** — eno
 | `server/tsconfig.json` | Strict TypeScript config targeting Node 20 |
 | `server/.env.example` | Full env example (see Section 2) |
 | `server/src/index.ts` | Express app bootstrap (minimal, mounts routes) |
-| `server/src/services/model.service.ts` | **Full implementation** (this plan's main deliverable) |
+| `server/src/services/model.constants.ts` | All env-driven constants (`SupportedProvider`, retry config, default models) |
+| `server/src/services/model.service.ts` | **Full implementation** (imports constants from `model.constants.ts`) |
 | `server/src/types/pipeline.types.ts` | `AgentResult`, `PipelineRequest`, `PipelineResponse` interfaces |
 | `server/src/middleware/auth.ts` | JWT validation stub (`// TODO: implement`) |
 | `server/src/middleware/rateLimit.ts` | Rate limit stub |
@@ -595,7 +631,7 @@ export async function runHiringManager(
 |---|---|
 | Imports | 8 |
 | Type definitions (`SupportedProvider`, `ProviderConfig`) | 10 |
-| Constants (`DEFAULT_MODELS`, `SAME_PROVIDER_FALLBACK_MODELS`, retry config) | 18 |
+| Constants (`DEFAULT_MODELS`, `FALLBACK_MODELS`, retry config) | 18 |
 | `ModelConfigError` + `PipelineError` classes | 20 |
 | `sleep()` + `backoffMs()` helpers | 10 |
 | `isRetriable()` + `isFatalForProvider()` helpers | 25 |
@@ -619,6 +655,8 @@ export async function runHiringManager(
 
 ```typescript
 // Pure helper functions for ModelService — no class dependencies.
+// Imports BASE_BACKOFF_MS and MAX_BACKOFF_MS from ../services/model.constants.js
+// so backoff timing is also configurable via env vars.
 
 export function sleep(ms: number): Promise<void>
 export function backoffMs(attempt: number): number
@@ -694,7 +732,7 @@ describe("ModelService — constructor")
   ✓ throws ModelConfigError when primary API key is missing
   ✓ logs warning + disables fallback when FALLBACK_MODEL_PROVIDER key is missing
   ✓ uses DEFAULT_MODELS when MODEL_NAME is not set
-  ✓ uses SAME_PROVIDER_FALLBACK_MODELS when FALLBACK_MODEL_PROVIDER not set (non-ollama)
+  ✓ uses FALLBACK_MODELS when FALLBACK_MODEL_PROVIDER not set (non-ollama)
   ✓ sets fallbackConfig = null for ollama primary with no FALLBACK_MODEL_PROVIDER
 
 describe("ModelService.complete() — happy path")
@@ -856,7 +894,7 @@ npm run test:integration
 - [ ] Fallback succeeds after primary fails → returns text, logs warn with provider/model/error.
 - [ ] Both primary and fallback fail → `PipelineError` thrown with original errors.
 - [ ] `MODEL_NAME` unset → default model for the provider is used without crash.
-- [ ] `FALLBACK_MODEL_NAME` unset and same provider → `SAME_PROVIDER_FALLBACK_MODELS` default used.
+- [ ] `FALLBACK_MODEL_NAME` unset and same provider → `FALLBACK_MODELS` default used.
 - [ ] `ollama` primary with no fallback configured → `PipelineError` if primary fails.
 - [ ] `ollama` primary + `google` fallback + Ollama server not running → `ECONNREFUSED` triggers **immediate** fallback to Gemini (no retries, no backoff).
 - [ ] `FALLBACK_MODEL_PROVIDER=google` but `GOOGLE_GENERATIVE_AI_API_KEY` missing → warning at startup, fallback disabled, server starts.
