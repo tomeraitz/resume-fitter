@@ -1,3 +1,4 @@
+import process from "process";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   ModelService,
@@ -35,11 +36,15 @@ function makeNetworkError(code: "ECONNREFUSED" | "ENOTFOUND" | "ECONNRESET" | "E
   return new Error(code);
 }
 
+function makeGenerateTextResult(text: string) {
+  return { text } as any;
+}
+
 /**
  * Sets required env vars and constructs a ModelService.
  * Defaults to anthropic primary. Pass overrides to change any env var.
  */
-function makeService(overrides: NodeJS.ProcessEnv = {}): ModelService {
+function makeService(overrides: Record<string, string | undefined> = {}): ModelService {
   process.env["MODEL_PROVIDER"] = "anthropic";
   process.env["ANTHROPIC_API_KEY"] = "sk-ant-test-key";
   Object.assign(process.env, overrides);
@@ -126,7 +131,7 @@ describe("ModelService — constructor", () => {
 
 describe("ModelService.complete() — happy path", () => {
   it("returns text from generateText on first attempt", async () => {
-    mockGenerateText.mockResolvedValueOnce({ text: "Hello, world!" });
+    mockGenerateText.mockResolvedValueOnce(makeGenerateTextResult("Hello, world!"));
     const svc = makeService();
     await expect(svc.complete("system", "user")).resolves.toBe("Hello, world!");
     expect(mockGenerateText).toHaveBeenCalledTimes(1);
@@ -170,10 +175,10 @@ describe("ModelService.complete() — fatal errors (no retry, no fallback)", () 
 
 describe("ModelService.complete() — fatal-for-provider (skip retries, use fallback)", () => {
   it("NoSuchModelError → falls back after 0 retries, generateText called exactly twice", async () => {
-    const nsme = new NoSuchModelError({ modelId: "bad-model", modelType: "language" });
+    const nsme = new NoSuchModelError({ modelId: "bad-model", modelType: "languageModel" });
     mockGenerateText
       .mockRejectedValueOnce(nsme)
-      .mockResolvedValueOnce({ text: "fallback ok" });
+      .mockResolvedValueOnce(makeGenerateTextResult("fallback ok"));
     const svc = makeService({
       FALLBACK_MODEL_PROVIDER: "openai",
       OPENAI_API_KEY: "sk-test",
@@ -185,7 +190,7 @@ describe("ModelService.complete() — fatal-for-provider (skip retries, use fall
   it("ECONNREFUSED → falls back after 0 retries, generateText called exactly twice", async () => {
     mockGenerateText
       .mockRejectedValueOnce(makeNetworkError("ECONNREFUSED"))
-      .mockResolvedValueOnce({ text: "fallback ok" });
+      .mockResolvedValueOnce(makeGenerateTextResult("fallback ok"));
     const svc = makeService({
       FALLBACK_MODEL_PROVIDER: "openai",
       OPENAI_API_KEY: "sk-test",
@@ -197,7 +202,7 @@ describe("ModelService.complete() — fatal-for-provider (skip retries, use fall
   it("ENOTFOUND → falls back after 0 retries, generateText called exactly twice", async () => {
     mockGenerateText
       .mockRejectedValueOnce(makeNetworkError("ENOTFOUND"))
-      .mockResolvedValueOnce({ text: "fallback ok" });
+      .mockResolvedValueOnce(makeGenerateTextResult("fallback ok"));
     const svc = makeService({
       FALLBACK_MODEL_PROVIDER: "openai",
       OPENAI_API_KEY: "sk-test",
@@ -215,7 +220,7 @@ describe("ModelService.complete() — retriable errors", () => {
     mockGenerateText
       .mockRejectedValueOnce(makeApiError(429))
       .mockRejectedValueOnce(makeApiError(429))
-      .mockResolvedValueOnce({ text: "ok after retries" });
+      .mockResolvedValueOnce(makeGenerateTextResult("ok after retries"));
 
     const svc = makeService();
     const promise = svc.complete("sys", "usr");
@@ -230,7 +235,7 @@ describe("ModelService.complete() — retriable errors", () => {
       .mockRejectedValueOnce(makeApiError(500))
       .mockRejectedValueOnce(makeApiError(500))
       .mockRejectedValueOnce(makeApiError(500))
-      .mockResolvedValueOnce({ text: "fallback result" });
+      .mockResolvedValueOnce(makeGenerateTextResult("fallback result"));
 
     const svc = makeService({
       FALLBACK_MODEL_PROVIDER: "openai",
@@ -249,7 +254,7 @@ describe("ModelService.complete() — retriable errors", () => {
       .mockRejectedValueOnce(makeApiError(429))
       .mockRejectedValueOnce(makeApiError(429))
       .mockRejectedValueOnce(makeApiError(429))
-      .mockResolvedValueOnce({ text: "from fallback" });
+      .mockResolvedValueOnce(makeGenerateTextResult("from fallback"));
 
     const svc = makeService({
       FALLBACK_MODEL_PROVIDER: "openai",
@@ -305,7 +310,7 @@ describe("ModelService.complete() — fallback exhaustion", () => {
       .mockRejectedValueOnce(rootCause); // but only 3 primary rejections registered above
 
     // Easier: use a fatal-for-provider error so we skip straight to fallback
-    const nsme = new NoSuchModelError({ modelId: "x", modelType: "language" });
+    const nsme = new NoSuchModelError({ modelId: "x", modelType: "languageModel" });
     mockGenerateText.mockReset();
     mockGenerateText
       .mockRejectedValueOnce(nsme)
@@ -367,7 +372,7 @@ describe("model-helpers — isRetriable", () => {
 describe("model-helpers — isFatalForProvider", () => {
   it("returns true for NoSuchModelError", () => {
     expect(
-      isFatalForProvider(new NoSuchModelError({ modelId: "x", modelType: "language" })),
+      isFatalForProvider(new NoSuchModelError({ modelId: "x", modelType: "languageModel" })),
     ).toBe(true);
   });
 

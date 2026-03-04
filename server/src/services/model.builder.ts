@@ -2,7 +2,6 @@ import { type LanguageModel } from "ai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { ollama } from "ollama-ai-provider-v2";
 import { type SupportedProvider } from "./model.constants.js";
 import { ModelConfigError } from "./model.errors.js";
 import type { ProviderConfig } from "../types/model.types.js";
@@ -55,6 +54,7 @@ export function buildModel(config: ProviderConfig): LanguageModel {
     return createGoogleGenerativeAI({ apiKey })(modelName);
   }
 
-  // ollama — no API key required; OLLAMA_BASE_URL is read from env by the provider
-  return ollama(modelName);
+  // ollama — server speaks OpenAI-compatible protocol; use OLLAMA_BASE_URL if set
+  const baseURL = process.env["OLLAMA_BASE_URL"] ?? "http://localhost:11434";
+  return createOpenAI({ baseURL, apiKey: "ollama", compatibility: "compatible" })(modelName);
 }
