@@ -54,7 +54,7 @@ export function buildModel(config: ProviderConfig): LanguageModel {
     return createGoogleGenerativeAI({ apiKey })(modelName);
   }
 
-  // ollama — server speaks OpenAI-compatible protocol; use OLLAMA_BASE_URL if set
-  const baseURL = process.env["OLLAMA_BASE_URL"] ?? "http://localhost:11434";
-  return createOpenAI({ baseURL, apiKey: "ollama", compatibility: "compatible" })(modelName);
+  // claude-proxy — speaks OpenAI-compatible protocol at /v1/chat/completions
+  const baseURL = process.env["CLAUDE_PROXY_URL"] ?? "http://localhost:8001/v1";
+  return createOpenAI({ baseURL, apiKey: "dummy" }).chat(modelName);
 }

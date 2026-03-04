@@ -55,13 +55,20 @@ export function isRetriable(error: unknown): boolean {
  * should skip retries entirely (go straight to fallback):
  *   - NoSuchModelError — wrong model name, retrying won't help
  *   - ECONNREFUSED / ENOTFOUND — provider host is unreachable
+ *   - RetryError wrapping any of the above (all retries exhausted)
  */
 export function isFatalForProvider(error: unknown): boolean {
   if (error instanceof NoSuchModelError) return true;
 
   if (error instanceof Error) {
     const msg = error.message;
-    if (msg.includes("ECONNREFUSED") || msg.includes("ENOTFOUND")) return true;
+    if (msg.includes("ECONNREFUSED") || msg.includes("ENOTFOUND") || msg.includes("Cannot connect to API")) return true;
+
+    // Unwrap AI SDK RetryError — check if all nested errors are provider-fatal
+    const errors = (error as unknown as Record<string, unknown>)["errors"];
+    if (Array.isArray(errors) && errors.length > 0) {
+      return errors.every((e: unknown) => isFatalForProvider(e));
+    }
   }
 
   return false;

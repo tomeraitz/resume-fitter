@@ -49,37 +49,33 @@ describeIf(RUN)("Integration: Ollama primary (MODEL_PROVIDER=ollama)", () => {
 
 // ── Suite 2: Ollama → Gemini fallback ────────────────────────────────────
 
-// describeIf(RUN)("Integration: Ollama→Gemini fallback", () => {
-//   let svc: ModelService;
-//   let warnSpy: ReturnType<typeof vi.spyOn>;
+describeIf(RUN)("Integration: Ollama→Gemini fallback", () => {
+  let svc: ModelService;
+  let warnSpy: ReturnType<typeof vi.spyOn>;
 
-//   beforeAll(() => {
-//     process.env["MODEL_PROVIDER"] = "ollama";
-//     // Intentionally bad model name → triggers NoSuchModelError or similar
-//     process.env["MODEL_NAME"] = "this-model-does-not-exist";
-//     process.env["OLLAMA_BASE_URL"] =
-//       process.env["OLLAMA_BASE_URL"] ?? "http://localhost:11434";
-//     process.env["FALLBACK_MODEL_PROVIDER"] = "google";
-//     process.env["FALLBACK_MODEL_NAME"] = "gemini-2.0-flash-lite";
-//     // GOOGLE_GENERATIVE_AI_API_KEY must be set in .env
-//     warnSpy = vi.spyOn(console, "warn");
-//     svc = new ModelService();
-//   });
+  beforeAll(() => {
+    process.env["MODEL_PROVIDER"] = "ollama";
+    process.env["MODEL_NAME"] = "claude-sonnet-4-6";
+    // Unreachable port → primary always fails → fallback to Gemini kicks in
+    process.env["CLAUDE_PROXY_URL"] = "http://localhost:9999/v1";
+    warnSpy = vi.spyOn(console, "warn");
+    svc = new ModelService();
+  });
 
-//   it("complete() succeeds and returns a non-empty string (Gemini handles it)", async () => {
-//     const result = await svc.complete(
-//       "You are a helpful assistant.",
-//       "Reply with exactly: ok",
-//     );
-//     expect(typeof result).toBe("string");
-//     expect(result.length).toBeGreaterThan(0);
-//   });
+  it("complete() succeeds and returns a non-empty string (Gemini handles it)", async () => {
+    const result = await svc.complete(
+      "You are a helpful assistant.",
+      "Reply with exactly: ok",
+    );
+    expect(typeof result).toBe("string");
+    expect(result.length).toBeGreaterThan(0);
+  });
 
-//   it("console.warn was called with a message containing 'fallback'", () => {
-//     // The fallback log fires when the primary (bad Ollama model) fails
-//     // and Gemini succeeds.
-//     expect(warnSpy).toHaveBeenCalledWith(
-//       expect.stringContaining("fallback"),
-//     );
-//   });
-// });
+  it("console.warn was called with a message containing 'fallback'", () => {
+    // The fallback log fires when the primary (bad Ollama model) fails
+    // and Gemini succeeds.
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("fallback"),
+    );
+  });
+});
