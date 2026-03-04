@@ -45,7 +45,7 @@ Final CV saved / displayed to user
 | UI | React + TypeScript | Familiar, works inside WXT |
 | UI surface | Injected overlay (content script UI) | Floating popup rendered directly on the page |
 | Agent orchestration | Background Service Worker | Persistent across page navigations |
-| LLM calls | Backend server (Node.js) | API key never touches the browser |
+| LLM calls | **Vercel AI SDK** on backend (Node.js) | Unified interface for Claude, OpenAI, Gemini, Ollama (local) |
 | API key storage | Server environment variable | Never exposed to client |
 | Auth | Session token (short-lived JWT) | Extension authenticates to backend, not to Claude directly |
 | Job desc capture | Content Script | Auto-reads from LinkedIn, Greenhouse, etc. |
@@ -78,7 +78,8 @@ Final CV saved / displayed to user
 │                                              │
 │  API key stored in env vars                  │
 │  └── Orchestrates the 4-agent pipeline       │
-│      └── fetch() × 4 → Claude API           │
+│      └── Vercel AI SDK → any LLM provider   │
+│          (Claude / OpenAI / Gemini / Ollama) │
 └──────────────────────────────────────────────┘
 ```
 
@@ -100,7 +101,7 @@ Orchestrator (your TS code, not Claude)
 
 - **Backend server required** - API key lives in server env vars, never sent to browser
 - **Extension only holds a session token** - short-lived, scoped, not the actual Claude API key
-- **No LangGraph / Vercel AI SDK** - direct `fetch()` on backend keeps it simple
+- **Vercel AI SDK on backend** - unified provider interface; swap between Claude, OpenAI, Gemini, or local Ollama models via a single env var (`MODEL_PROVIDER`)
 - **Split context** - each agent gets only what it needs, prevents context bloat
 - **Content script** - auto-captures job description so user doesn't paste manually
 - **Injected overlay** - floating React app rendered directly on the job posting page, isolated in Shadow DOM so the page's CSS doesn't bleed in

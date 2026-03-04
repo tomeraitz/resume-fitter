@@ -102,11 +102,26 @@ manifest: {
 
 ## Backend Server (Node.js + TypeScript)
 
+### Key Dependencies
+
+| Package | Purpose |
+|---|---|
+| `ai` | Vercel AI SDK core (`generateText`, `streamText`) |
+| `@ai-sdk/anthropic` | Claude provider |
+| `@ai-sdk/openai` | OpenAI provider |
+| `@ai-sdk/google` | Gemini provider |
+| `@ai-sdk/ollama` | Local models via Ollama |
+
 ```
 server/
 ├── package.json
 ├── tsconfig.json
-├── .env                             # ANTHROPIC_API_KEY=sk-ant-...  ← never committed
+├── .env                             # MODEL_PROVIDER=anthropic        ← never committed
+│                                    # ANTHROPIC_API_KEY=sk-ant-...
+│                                    # OPENAI_API_KEY=sk-...           (optional)
+│                                    # GOOGLE_GENERATIVE_AI_API_KEY=.. (optional)
+│                                    # OLLAMA_BASE_URL=http://localhost:11434 (local models)
+│                                    # MODEL_NAME=claude-sonnet-4-6    (overrides default)
 │                                    # SESSION_SECRET=...
 │                                    # PORT=3001
 │
@@ -137,10 +152,12 @@ server/
     │   └── verifier.md              # Prompt for Agent 4
     │
     ├── services/
-    │   └── claude.service.ts        # ClaudeService class
-    │                                # • Instantiates Anthropic client from env var
+    │   └── model.service.ts         # ModelService class (Vercel AI SDK)
+    │                                # • Resolves provider from MODEL_PROVIDER env var
+    │                                #   e.g. "anthropic" | "openai" | "google" | "ollama"
     │                                # • complete(systemPrompt, userPrompt): Promise<string>
-    │                                # • Handles APIError, AuthenticationError, RateLimitError
+    │                                # • Uses generateText() from 'ai' package
+    │                                # • Handles APICallError, NoSuchModelError, retries
     │
     └── types/
         └── pipeline.types.ts        # AgentResult, PipelineRequest, PipelineResponse
@@ -155,7 +172,7 @@ sequenceDiagram
     participant CS as Content Script<br/>(entrypoints/content/)
     participant SW as Background SW<br/>(entrypoints/background.ts)
     participant BE as Backend Server<br/>(Node.js)
-    participant CL as Claude API
+    participant CL as LLM Provider<br/>(Claude / OpenAI / Gemini / Ollama)
 
     CS->>CS: scraper.ts reads job description from DOM
     CS->>CS: Overlay.tsx mounts in Shadow DOM
@@ -166,8 +183,9 @@ sequenceDiagram
     SW->>BE: POST /pipeline (HTTPS + Bearer token)
 
     BE->>BE: middleware/auth.ts validates JWT
+    BE->>BE: model.service.ts resolves provider from MODEL_PROVIDER env var
 
-    Note over BE,CL: agents/orchestrator.ts runs steps sequentially
+    Note over BE,CL: agents/orchestrator.ts runs steps sequentially via Vercel AI SDK
 
     BE->>CL: Agent 1 — hiring-manager.md<br/>Input: jobDesc + cvTemplate + history
     CL-->>BE: { matchScore, missingKeywords }
@@ -193,9 +211,9 @@ sequenceDiagram
 
 | Rule | Where enforced |
 |---|---|
-| API key **never** in browser | Only in `server/.env` → `ClaudeService` |
-| Anthropic SDK called **only** in background SW or server | `wxt-anthropic-rules.md` |
-| `dangerouslyAllowBrowser: true` **not used** (server-side SDK) | `ClaudeService` uses Node.js env |
+| API key **never** in browser | Only in `server/.env` → `ModelService` |
+| Vercel AI SDK called **only** on server | `model.service.ts` — never in extension code |
+| Provider swappable via env var | `MODEL_PROVIDER` + `MODEL_NAME` in `server/.env` |
 | Max **300 lines per file** | All modules in `services/`, `agents/` |
 | **Zod** validates all LLM responses | `extension/utils/validation.ts` |
 | **Shadow DOM** isolates overlay CSS | `content/index.tsx` host element |
