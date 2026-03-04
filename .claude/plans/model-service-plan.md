@@ -132,11 +132,11 @@ When `FALLBACK_MODEL_PROVIDER` differs from `MODEL_PROVIDER`:
 5. Implement retry loop + fallback internally.
 
 **Dependencies:**
-- `ai` — `generateText`, `APICallError`, `NoSuchModelError`, `InvalidPromptError`
+- `ai` — `generateText`, `LanguageModel`, `APICallError`, `NoSuchModelError`, `InvalidPromptError`
 - `@ai-sdk/anthropic` — `createAnthropic`
 - `@ai-sdk/openai` — `createOpenAI`
 - `@ai-sdk/google` — `createGoogleGenerativeAI`
-- `@ai-sdk/ollama` — `createOllama`
+- `ollama-ai-provider-v2` — `ollama` (community provider — `@ai-sdk/ollama` does not exist on npm)
 
 ### 4.2 Types (defined inside the service file to keep it self-contained)
 
@@ -179,11 +179,11 @@ const SAME_PROVIDER_FALLBACK_MODELS: Record<SupportedProvider, string | null> = 
 ```typescript
 // server/src/services/model.service.ts
 
-import { generateText, APICallError, NoSuchModelError, InvalidPromptError } from "ai";
+import { generateText, type LanguageModel, APICallError, NoSuchModelError, InvalidPromptError } from "ai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenAI } from "@ai-sdk/openai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { createOllama } from "@ai-sdk/ollama";
+import { ollama } from "ollama-ai-provider-v2"; // community provider — @ai-sdk/ollama does not exist
 
 // ── Constants ──────────────────────────────────────────────────────────────
 
@@ -220,18 +220,23 @@ function isFatalForProvider(error: unknown): boolean
   //   "ECONNREFUSED" or "ENOTFOUND" — these are thrown by fetch when the host is unreachable.
   //   For Ollama-as-primary, this means the local server is down → go straight to Gemini fallback.
 
-function buildModel(config: ProviderConfig): LanguageModelV1
+function buildModel(config: ProviderConfig): LanguageModel
   // Reads API key from process.env based on config.provider.
   // Throws ModelConfigError if the required key is missing.
   // Returns the appropriate provider model object:
-  //   anthropic: createAnthropic({ apiKey })("<modelName>")
-  //   openai:    createOpenAI({ apiKey })("<modelName>")
-  //   google:    createGoogleGenerativeAI({ apiKey })("<modelName>")
-  //   ollama:    createOllama({ baseURL })("<modelName>")
+  //   anthropic: createAnthropic({ apiKey })(config.modelName)
+  //   openai:    createOpenAI({ apiKey })(config.modelName)
+  //   google:    createGoogleGenerativeAI({ apiKey })(config.modelName)
+  //   ollama:    ollama(config.modelName)
+  //              baseURL is configured via the OLLAMA_BASE_URL env var handled by
+  //              the community provider internally (defaults to http://localhost:11434)
 
 function parseSupportedProvider(raw: string | undefined, varName: string): SupportedProvider
   // Validates that raw is one of the four supported values.
   // Throws with a descriptive message if not.
+  // IMPORTANT: must only be called when raw is defined and non-empty.
+  //   In resolveFallbackConfig(), guard with:
+  //   if (!raw) { /* skip to same-provider fallback */ }
 
 // ── ModelService ───────────────────────────────────────────────────────────
 
@@ -277,9 +282,13 @@ export class ModelService {
     userPrompt: string,
   ): Promise<string>
     // Internal retry loop for primaryConfig only.
-    // Implements: attempt 0 → catch → classify → sleep(backoffMs(attempt)) → attempt 1 → etc.
+    // Error classification order on each failure:
+    //   1. InvalidPromptError?      → rethrow immediately (fatal, no fallback)
+    //   2. isFatalForProvider(err)? → rethrow (triggers fallback in complete(), 0 retries)
+    //                                  covers: NoSuchModelError, ECONNREFUSED, ENOTFOUND
+    //   3. isRetriable(err)?        → sleep(backoffMs(attempt)) and retry
+    //   4. else (fatal 4xx etc.)    → rethrow immediately
     // Throws last caught error when retries are exhausted.
-    // Immediately rethrows InvalidPromptError and NoSuchModelError (no backoff).
 
   private resolveFallbackConfig(): ProviderConfig | null
     // Called from constructor.
@@ -310,11 +319,10 @@ export class ModelConfigError extends Error {
 
 export class PipelineError extends Error {
   // Thrown when both primary and fallback fail, or primary fails with no fallback.
-  public readonly cause: unknown;
+  // Uses ES2022 built-in Error.cause — do NOT redeclare cause as a class field.
   constructor(message: string, cause: unknown) {
-    super(message);
+    super(message, { cause }); // sets this.cause via the built-in Error constructor
     this.name = "PipelineError";
-    this.cause = cause;
   }
 }
 ```
@@ -329,11 +337,12 @@ complete(systemPrompt, userPrompt)
   ├─► withRetry(primaryConfig, ...)
   │     ├── attempt 0: attemptCompletion(primaryConfig, ...)
   │     │     └── success → return text ✓
-  │     ├── attempt 0 fails:
-  │     │     ├── InvalidPromptError? → rethrow immediately (fatal)
-  │     │     ├── NoSuchModelError?   → rethrow (skip to fallback)
-  │     │     ├── isRetriable?        → sleep(100ms), attempt 1
-  │     │     └── other fatal 4xx    → rethrow immediately
+  │     ├── attempt 0 fails (classification order):
+  │     │     ├── InvalidPromptError?       → rethrow immediately (fatal, no fallback)
+  │     │     ├── isFatalForProvider(err)?  → rethrow (0 retries, triggers fallback)
+  │     │     │     covers: NoSuchModelError, ECONNREFUSED, ENOTFOUND
+  │     │     ├── isRetriable?              → sleep(100ms), attempt 1
+  │     │     └── other fatal (4xx)         → rethrow immediately
   │     ├── attempt 1 fails → sleep(200ms), attempt 2
   │     └── attempt 2 fails → rethrow last error
   │
@@ -398,29 +407,29 @@ All paths are relative to the monorepo root. These are **minimal stubs** — eno
     "test:integration": "RUN_INTEGRATION_TESTS=true vitest run --reporter=verbose tests/model.service.integration.test.ts"
   },
   "dependencies": {
-    "ai": "4.3.16",
-    "@ai-sdk/anthropic": "1.2.12",
-    "@ai-sdk/openai": "1.3.22",
-    "@ai-sdk/google": "1.2.18",
-    "@ai-sdk/ollama": "1.2.0",
-    "express": "4.21.2",
-    "dotenv": "16.4.7",
-    "jsonwebtoken": "9.0.2",
-    "express-rate-limit": "7.5.0",
-    "zod": "3.24.2"
+    "ai": "<verify: npm view ai version>",
+    "@ai-sdk/anthropic": "<verify: npm view @ai-sdk/anthropic version>",
+    "@ai-sdk/openai": "<verify: npm view @ai-sdk/openai version>",
+    "@ai-sdk/google": "<verify: npm view @ai-sdk/google version>",
+    "ollama-ai-provider-v2": "<verify: npm view ollama-ai-provider-v2 version>",
+    "express": "<verify: npm view express version>",
+    "dotenv": "<verify: npm view dotenv version>",
+    "jsonwebtoken": "<verify: npm view jsonwebtoken version>",
+    "express-rate-limit": "<verify: npm view express-rate-limit version>",
+    "zod": "<verify: npm view zod version>"
   },
   "devDependencies": {
-    "@types/express": "4.17.21",
-    "@types/jsonwebtoken": "9.0.9",
-    "@types/node": "22.13.10",
-    "typescript": "5.8.2",
-    "tsx": "4.19.3",
-    "vitest": "2.1.9"
+    "@types/express": "<verify: npm view @types/express version>",
+    "@types/jsonwebtoken": "<verify: npm view @types/jsonwebtoken version>",
+    "@types/node": "<verify: npm view @types/node version>",
+    "typescript": "<verify: npm view typescript version>",
+    "tsx": "<verify: npm view tsx version>",
+    "vitest": "<verify: npm view vitest version>"
   }
 }
 ```
 
-**Note on pinned versions:** Per `wxt-ai-rules.md`, no `^` on critical packages. Versions above reflect the latest stable releases as of 2026-03-04 and must be verified with `npm info <package> version` before committing.
+**Note on pinned versions:** Per `wxt-ai-rules.md`, no `^` on critical packages. All versions above are placeholders — run `npm view <package> version` for each before writing the final `package.json`. The `ai` and `@ai-sdk/*` packages must all be from the same major version family (currently `6.x` / `3.x` respectively). Verify Express major version (v4 vs v5) since v5 has breaking API changes; confirm stub code is compatible before pinning.
 
 #### `server/tsconfig.json`
 
@@ -452,6 +461,9 @@ All paths are relative to the monorepo root. These are **minimal stubs** — eno
 import "dotenv/config";
 import express from "express";
 import { pipelineRouter } from "./routes/pipeline.js";
+// Eagerly import orchestrator so ModelService validates env vars at startup,
+// not on the first incoming request.
+import "./agents/orchestrator.js";
 
 const app = express();
 app.use(express.json({ limit: "256kb" }));
@@ -463,7 +475,7 @@ app.listen(Number(port), () => {
 });
 ```
 
-**Note:** `dotenv/config` must be imported before anything else so env vars are available when `ModelService` constructor runs.
+**Note:** `dotenv/config` must be imported before anything else so env vars are available when `ModelService` constructor runs. The `orchestrator.js` import is intentionally side-effectful — it causes `new ModelService()` to run at module load so a missing `MODEL_PROVIDER` or API key crashes the server at startup with a clear error, not silently on the first request.
 
 #### `server/src/types/pipeline.types.ts` (stub)
 
@@ -695,9 +707,9 @@ describe("ModelService.complete() — fatal errors (no retry, no fallback)")
   ✓ APICallError 400 → rethrows immediately (no retry)
 
 describe("ModelService.complete() — fatal-for-provider (skip retries, use fallback)")
-  ✓ NoSuchModelError → goes to fallback after 0 retries
-  ✓ ECONNREFUSED error → goes to fallback after 0 retries
-  ✓ ENOTFOUND error → goes to fallback after 0 retries
+  ✓ NoSuchModelError → goes to fallback after 0 retries, generateText called exactly 1 time
+  ✓ ECONNREFUSED error → goes to fallback after 0 retries, generateText called exactly 1 time
+  ✓ ENOTFOUND error → goes to fallback after 0 retries, generateText called exactly 1 time
 
 describe("ModelService.complete() — retriable errors")
   ✓ APICallError 429 → retries 2x with backoff, then falls to fallback
@@ -719,17 +731,28 @@ describe("model-helpers — isRetriable / isFatalForProvider")
   ✓ isFatalForProvider: false for retriable APICallError
 ```
 
-**Backoff timing test approach** — fake timers so tests don't actually wait:
+**Backoff timing test approach** — fake timers so tests don't actually wait.
+
+**Important:** `APICallError` cannot be directly constructed with `new APICallError({ statusCode: 429 })` — it is an internal SDK class not designed for user instantiation. Use a plain object that passes the `APICallError.isInstance()` duck-type check, or mock at the `generateText` level so `isRetriable` receives the raw rejection value and classifies it by shape:
 
 ```typescript
+// Helper — create a mock APICallError-like object for retriable status codes
+function makeApiError(statusCode: number): Error & { statusCode: number; isRetryable: boolean } {
+  const err = Object.assign(new Error(`HTTP ${statusCode}`), {
+    statusCode,
+    isRetryable: statusCode === 429 || statusCode >= 500,
+  });
+  return err as Error & { statusCode: number; isRetryable: boolean };
+}
+
 it("retries 429 with exponential backoff", async () => {
   vi.useFakeTimers();
   mockGenerateText
-    .mockRejectedValueOnce(new APICallError({ statusCode: 429, ... }))
-    .mockRejectedValueOnce(new APICallError({ statusCode: 429, ... }))
+    .mockRejectedValueOnce(makeApiError(429))
+    .mockRejectedValueOnce(makeApiError(429))
     .mockResolvedValueOnce({ text: "ok" });
 
-  const svc = makeService(); // helper that sets env + constructs ModelService
+  const svc = makeService(); // helper that sets env vars + constructs ModelService
   const promise = svc.complete("sys", "usr");
   await vi.runAllTimersAsync();
   await expect(promise).resolves.toBe("ok");
@@ -737,6 +760,8 @@ it("retries 429 with exponential backoff", async () => {
   vi.useRealTimers();
 });
 ```
+
+**Note on `isRetriable` implementation:** Since `APICallError.isInstance()` may not return `true` for hand-crafted objects, implement `isRetriable()` to check `statusCode` and `isRetryable` as plain property reads (duck typing) rather than relying on `APICallError.isInstance()` exclusively. This makes the helper testable without real SDK error instances.
 
 ---
 
@@ -840,223 +865,7 @@ npm run test:integration
 
 **Integration (local only, `RUN_INTEGRATION_TESTS=true`):**
 - [ ] Ollama primary with real model → returns non-empty response.
-- [ ] Ollama (bad model name) + Gemini fallback → Gemini responds, warn log fires.
+- [ ] Ollama (bad model name) + Gemini fallback → Gemini responds, warn log fires. *(Note: Ollama may not throw `NoSuchModelError` for unknown models — assert on `console.warn` containing "fallback" rather than error type.)*
 - [ ] Ollama (server down / ECONNREFUSED) + Gemini fallback → Gemini responds in < 5 s.
 - [ ] Gemini primary direct → returns non-empty response.
 
----
-
-## 10. Review Notes
-
-> Reviewed: 2026-03-04
-> Reviewer: ai-wxt-expert agent
-> Rules source: `.claude/docs/wxt-ai-rules.md`
-
----
-
-### 10.1 Critical Bugs — Must Fix Before Implementation
-
-#### [BUG-1] Section 5.2 — `@ai-sdk/ollama` does not exist on npm
-
-**Severity: Blocker.**
-
-The package `@ai-sdk/ollama` referenced in Sections 4.1 (Dependencies), 4.4 (imports), 5.2 (`package.json`), and 7 (`model-helpers.ts` signatures) **does not exist in the npm registry**. Running `npm view @ai-sdk/ollama` returns a 404.
-
-The Vercel AI SDK docs list Ollama as a **community provider**, not a first-party `@ai-sdk/*` provider. The correct community packages are:
-- `ollama-ai-provider-v2` (install: `npm install ollama-ai-provider-v2`, import: `import { ollama } from 'ollama-ai-provider-v2'`)
-- `ai-sdk-ollama` (alternative community package)
-
-**Required changes:**
-1. In Section 4.1 — replace `@ai-sdk/ollama` → `ollama-ai-provider-v2` in the Dependencies list.
-2. In Section 4.4 — replace the import:
-   ```typescript
-   // WRONG:
-   import { createOllama } from "@ai-sdk/ollama";
-
-   // CORRECT:
-   import { ollama } from "ollama-ai-provider-v2";
-   ```
-   The community provider exports a pre-built `ollama` instance used as `ollama("<modelName>")`, not a factory `createOllama(...)`. The `buildModel()` helper must be updated accordingly — for the ollama branch, use `ollama(config.modelName)` instead of `createOllama({ baseURL })(config.modelName)`.
-3. In Section 5.2 (`package.json`) — replace `"@ai-sdk/ollama": "1.2.0"` with `"ollama-ai-provider-v2": "<latest>"`. The version `1.2.0` was fabricated; verify the real latest with `npm view ollama-ai-provider-v2 version` before pinning.
-4. The `OLLAMA_BASE_URL` env var may still be usable if the community provider accepts a baseURL option — verify against `ollama-ai-provider-v2` docs. If not supported, document that Ollama must be reachable at its default `http://localhost:11434`.
-
-**Note on `wxt-ai-rules.md`:** The rules table lists `@ai-sdk/ollama` as the Ollama package. This is incorrect in the rules file as well. The implementation must use the actual working package; flag this to the rules file maintainer separately.
-
----
-
-#### [BUG-2] Section 4.4 — `LanguageModelV1` is the wrong type name
-
-**Severity: TypeScript compilation error.**
-
-The `buildModel()` helper is typed as returning `LanguageModelV1`. The Vercel AI SDK's public surface type for the model parameter accepted by `generateText()` is `LanguageModel` (not `LanguageModelV1`).
-
-`LanguageModelV1` is an internal protocol interface inside `@ai-sdk/provider` and is not the type you should use as a return type in application code. Using it will likely compile only if you happen to have `@ai-sdk/provider` as a direct dependency, but it creates a brittle coupling to the internal versioned protocol.
-
-**Required change in Section 4.4:**
-```typescript
-// WRONG:
-function buildModel(config: ProviderConfig): LanguageModelV1
-
-// CORRECT:
-import type { LanguageModel } from "ai";
-function buildModel(config: ProviderConfig): LanguageModel
-```
-
-Add `LanguageModel` to the import from `"ai"` in Section 4.4.
-
----
-
-#### [BUG-3] Section 5.2 — Package versions are significantly outdated or fabricated
-
-**Severity: High — pinned versions must be correct per the `no ^ on critical packages` rule.**
-
-Actual latest npm versions as of 2026-03-04 vs. what the plan specifies:
-
-| Package | Plan version | Actual latest | Status |
-|---|---|---|---|
-| `ai` | `4.3.16` | `6.0.111` | Wrong — major version behind |
-| `@ai-sdk/anthropic` | `1.2.12` | `3.0.54` | Wrong — major version behind |
-| `@ai-sdk/openai` | `1.3.22` | `3.0.39` | Wrong — major version behind |
-| `@ai-sdk/google` | `1.2.18` | `3.0.37` | Wrong — major version behind |
-| `@ai-sdk/ollama` | `1.2.0` | Does not exist | Blocker (see BUG-1) |
-| `express` | `4.21.2` | `5.2.1` | Wrong — major version behind |
-| `vitest` | `2.1.9` | `4.0.18` | Wrong — major version behind |
-| `tsx` | `4.19.3` | `4.21.0` | Close but not exact |
-| `typescript` | `5.8.2` | `5.9.3` | Wrong |
-| `express-rate-limit` | `7.5.0` | `8.2.1` | Wrong — major version behind |
-| `jsonwebtoken` | `9.0.2` | `9.0.3` | Close but not exact |
-| `dotenv` | `16.4.7` | `17.3.1` | Wrong — major version behind |
-| `zod` | `3.24.2` | `4.3.6` | Wrong — major version behind |
-
-**Required action:** Do not hardcode these versions in the plan — the plan already states "must be verified with `npm info <package> version` before committing." However, the example versions in the plan are so far off that they could be copy-pasted and cause broken installs. Replace all hardcoded versions in Section 5.2 with a `<verify with npm view>` placeholder, or update them to reflect real values before implementation begins.
-
-**Additional concern — breaking API changes:** The jump from `ai@4.x` to `ai@6.x` and `express@4.x` to `express@5.x` likely involves breaking API changes. The express v5 router and error handling APIs differ from v4. The plan's stub code for `server/src/routes/pipeline.ts` and `server/src/middleware/auth.ts` uses Express v4 patterns. Verify compatibility before pinning to v5.
-
----
-
-#### [BUG-4] Section 9.1 — `APICallError` constructor call in test is wrong
-
-**Severity: Unit tests will not compile.**
-
-The test snippet constructs `APICallError` directly:
-```typescript
-new APICallError({ statusCode: 429, ... })
-```
-
-`APICallError` is a structured error thrown by the SDK internally — it is **not intended to be constructed directly** in user code using a plain object argument. The correct approach in tests is to use the static factory check `APICallError.isInstance(err)` for type narrowing, and to construct test errors by subclassing or by creating a plain object that satisfies the duck-type check.
-
-The recommended approach for unit tests is to mock `generateText` to reject with a plain `Error` whose properties mimic `APICallError`, or use Vitest's `vi.fn().mockRejectedValue(...)` with a hand-crafted object that passes `APICallError.isInstance()`. Alternatively, check if the SDK exports a `createAPICallError` factory — if not, stub the error shape manually.
-
-**Required change in Section 9.1:** Remove the direct `new APICallError(...)` constructor usage from the test snippet and replace with a factory pattern or a plain object that the `isRetriable()` helper will correctly classify. Document this pattern explicitly in the testing section.
-
----
-
-### 10.2 Rule Violations
-
-#### [RULE-1] Section 4.4 — `CompletionOptions` interface inside `model.service.ts` violates grouping rule
-
-**Rule:** `wxt-ai-rules.md` — "Use `interface` for data shapes" + "Group by feature, not by type" with `types/` for shared TypeScript interfaces.
-
-**Finding:** Section 4.2 defines `SupportedProvider`, `ProviderConfig`, and `CompletionOptions` directly inside `model.service.ts` "to keep it self-contained." However, `ProviderConfig` and `SupportedProvider` are likely needed by `model-helpers.ts` (which receives a `ProviderConfig` to classify errors in context) and by agents that may construct partial configs. Keeping them inside the service file creates circular import risk if helpers need them.
-
-**Recommendation:** Move `SupportedProvider` and `ProviderConfig` to `server/src/types/pipeline.types.ts` (or a new `server/src/types/model.types.ts`). `CompletionOptions` is a private implementation detail and can stay in the service file as a private type (not exported). This has no rules violation — just be explicit that `ProviderConfig` will need to be in `types/` once `model-helpers.ts` imports it.
-
-#### [RULE-2] Section 4.5 — `PipelineError.cause` shadows built-in `Error.cause`
-
-**Rule:** `wxt-ai-rules.md` — "Strict mode enabled" + general TypeScript correctness.
-
-**Finding:** `PipelineError` declares `public readonly cause: unknown` as its own property. In ES2022 (the compile target), `Error` already has a built-in `cause` property (set via `super(message, { cause })`). Declaring `this.cause = cause` as a separate field while also having the built-in `Error.cause` set to `undefined` creates two different `cause` values — the built-in one (undefined) and the class field (the wrapped error).
-
-**Correction for Section 4.5:**
-```typescript
-export class PipelineError extends Error {
-  constructor(message: string, cause: unknown) {
-    super(message, { cause }); // ES2022 built-in Error.cause
-    this.name = "PipelineError";
-    // Do NOT redeclare cause as a separate property
-  }
-}
-```
-Access the cause via the standard `error.cause` which TypeScript types as `unknown` in ES2022. Remove the `public readonly cause: unknown` field declaration.
-
----
-
-### 10.3 Gaps and Missing Pieces
-
-#### [GAP-1] Section 4.4 — `buildModel()` for Ollama does not handle `OLLAMA_BASE_URL`
-
-The pseudocode says `createOllama({ baseURL })` but the plan never specifies where `baseURL` is read from inside `buildModel()`. The `.env.example` in Section 2 defines `OLLAMA_BASE_URL` — the implementation must read `process.env["OLLAMA_BASE_URL"] ?? "http://localhost:11434"` inside the ollama branch of `buildModel()`. This is implied but not stated explicitly, creating an implementation ambiguity. Add an explicit note in Section 4.4.
-
-#### [GAP-2] Section 4.4 — `parseSupportedProvider()` return used in `resolveFallbackConfig()` for optional var
-
-`parseSupportedProvider()` is described as throwing if the value is not one of the four supported values. But `FALLBACK_MODEL_PROVIDER` is optional — if it is not set, the function should not throw. The plan needs to clarify that `parseSupportedProvider()` should only be called when the env var is defined and non-empty. Add a guard in `resolveFallbackConfig()`: if `FALLBACK_MODEL_PROVIDER` is `undefined` or `""`, skip the parse call entirely and go to same-provider fallback resolution.
-
-#### [GAP-3] Section 4.6 — Control flow diagram missing `isFatalForProvider` branch in `withRetry`
-
-The control flow diagram in Section 4.6 shows `withRetry` handling `NoSuchModelError` (rethrows to trigger fallback), but `isFatalForProvider()` is also supposed to return `true` for `ECONNREFUSED`/`ENOTFOUND`. These network-fatal errors are not shown in the diagram — they look like they fall through to the `isRetriable?` check, which would then return `false` (since they're not retriable APICallErrors), causing them to be rethrown as fatal rather than triggering fallback.
-
-The logic should be:
-```
-attempt fails →
-  InvalidPromptError?        → rethrow immediately (fatal, no fallback)
-  isFatalForProvider(err)?   → rethrow to caller (triggers fallback, no retry)
-  isRetriable(err)?          → sleep + retry
-  else                       → rethrow immediately (other fatal 4xx)
-```
-This precedence order must be explicitly stated in both Section 4.4 (`withRetry` pseudocode) and Section 4.6.
-
-#### [GAP-4] Section 5.2 — `index.ts` stub does not mount `ModelService` startup validation
-
-The stub boots Express and mounts routes, but `ModelService` is only instantiated inside `orchestrator.ts` at module load. If `orchestrator.ts` is never imported by `index.ts` (only lazily imported when a request hits the route), startup validation of `MODEL_PROVIDER` and API key will not run at boot time — the error will surface on the first real request.
-
-**Recommendation:** Either import `orchestrator.ts` eagerly in `index.ts` (before `app.listen`) or add an explicit `new ModelService()` call in `index.ts` with a try/catch that exits the process on `ModelConfigError`. The plan should make this intent explicit. Currently `index.ts` only imports `pipelineRouter`, which does not import `orchestrator.ts`.
-
-#### [GAP-5] Section 9.1 — No test for the `isFatalForProvider` + ECONNREFUSED path being exempt from retry timing
-
-The test checklist (Section 9.3) includes "ollama + ECONNREFUSED triggers immediate fallback (no retries, no backoff)" but the unit test file structure in Section 9.1 does not include a corresponding test that verifies `generateText` was called exactly once (not 3 times) when an ECONNREFUSED-like error is thrown. Add this to the describe block for "fatal-for-provider" errors:
-```
-✓ ECONNREFUSED error → generateText called exactly 1 time (no retry)
-✓ ENOTFOUND error    → generateText called exactly 1 time (no retry)
-```
-
-#### [GAP-6] Section 9.2 — Integration Suite 2 uses a bad Ollama model name to trigger `NoSuchModelError`
-
-This relies on Ollama returning a `NoSuchModelError` when given a non-existent model name. Ollama's behavior when a model is not pulled locally may differ from what the Vercel AI SDK's community provider surfaces — it may throw a generic `Error` or a fetch error instead of a typed `NoSuchModelError`. The integration test comment should note this assumption and include a fallback assertion: if `console.warn` was called with "fallback", the test passes regardless of the exact error type. Document the potential fragility.
-
----
-
-### 10.4 Code Snippet Corrections Summary
-
-| Section | Issue | Correction |
-|---|---|---|
-| 4.1 Dependencies | `@ai-sdk/ollama` does not exist | Replace with `ollama-ai-provider-v2` |
-| 4.4 imports | `import { createOllama } from "@ai-sdk/ollama"` | `import { ollama } from "ollama-ai-provider-v2"` |
-| 4.4 `buildModel()` return type | `LanguageModelV1` | `LanguageModel` (from `"ai"`) |
-| 4.5 `PipelineError` | `public readonly cause: unknown` redeclaration | Use `super(message, { cause })` and remove the field |
-| 5.2 `package.json` | All dependency versions outdated (see BUG-3) | Verify all with `npm view <pkg> version` before pinning |
-| 9.1 test snippet | `new APICallError({ statusCode: 429, ... })` | Use mock/factory pattern; do not construct directly |
-
----
-
-### 10.5 Confirmations — No Changes Required
-
-The following sections are correct and compliant:
-
-- **Section 1 (Context & Constraints):** Accurately states all key rules: SDK server-only, 300-line limit, no `any`, env-var-driven provider swap. Fully compliant with `wxt-ai-rules.md`.
-- **Section 2 (`.env.example`):** Well-structured, all four providers covered, `SESSION_SECRET` and `PORT` included, inline comments are clear. `GOOGLE_GENERATIVE_AI_API_KEY` is the correct env var name for `@ai-sdk/google`.
-- **Section 3 (Fallback Strategy):** Error classification table is correct and matches SDK-documented error types. Retry counts (max 2, 3 total attempts), backoff formula (`100ms * 2^attempt`, cap 4000ms), and the "fallback attempted once" rule are all sound design decisions.
-- **Section 3.3 Same-Provider Fallback Models:** Model names are correct (`claude-haiku-4-5`, `gpt-4o-mini`, `gemini-2.0-flash-lite`). Ollama having no same-provider fallback is the right call.
-- **Section 4.3 Default Models:** `claude-sonnet-4-6`, `gpt-4o`, `gemini-2.0-flash`, `llama3.2` — all valid for their respective providers (subject to API version at time of implementation).
-- **Section 4.4 imports for non-Ollama providers:** `createAnthropic`, `createOpenAI`, `createGoogleGenerativeAI` are all correct import names from their respective `@ai-sdk/*` packages.
-- **Section 4.4 `generateText` import and usage:** `import { generateText } from "ai"` is correct. `result.text` is correct (the result object has `.text` directly).
-- **Section 4.4 error imports:** `APICallError`, `NoSuchModelError`, `InvalidPromptError` are all correctly imported from `"ai"`. `APICallError.isInstance()` is the correct way to type-narrow (referenced in `isRetriable` comments).
-- **Section 4.5 `ModelConfigError`:** Design is correct — thrown at constructor time so the server refuses to start with bad config. `this.name` assignment is correct.
-- **Section 4.6 Control Flow:** Conceptually correct for the non-Ollama paths. See GAP-3 for the ECONNREFUSED branch omission.
-- **Section 5.2 `tsconfig.json`:** `NodeNext` module resolution for ESM Node 20 is correct. `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes` are good additions. `skipLibCheck: true` is appropriate.
-- **Section 5.2 `index.ts`:** `import "dotenv/config"` as the first line is correct — env vars must load before `ModelService` runs.
-- **Section 5.2 agent stubs:** Function-per-agent (not class) is correct and stated reasoning is sound. `import type { ModelService }` (type-only import) is good — prevents circular import issues.
-- **Section 6 (Line Count Estimate):** The estimate of ~311 lines and the decision to extract helpers to `model-helpers.ts` is the correct approach. Estimated final split (~260 + ~50) satisfies the 300-line rule.
-- **Section 7 (model-helpers.ts):** Correct approach. Pure functions with no class dependencies are appropriate for extraction.
-- **Section 8 (Implementation Order):** Logical sequence. Types before service, helpers before service, service before stubs. Correct.
-- **Section 9 (Testing):** Vitest as test runner is correct for an ESM TypeScript project. `vi.useFakeTimers()` + `vi.runAllTimersAsync()` is the correct pattern for testing backoff without real waits. The `RUN_INTEGRATION_TESTS` gate is the right approach for keeping expensive tests out of CI.
-- **Section 9.3 Checklist:** Comprehensive. Covers all error paths, config edge cases, and the "no API keys in logs" requirement from `wxt-ai-rules.md`.
