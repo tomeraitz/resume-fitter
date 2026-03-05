@@ -7,7 +7,7 @@
 - **Max 300 lines per file.** Split into smaller modules when approaching the limit.
 - Group by feature, not by type:
   ```
-  entrypoints/     ← WXT entrypoints only (popup, background, content)
+  routes/          ← HTTP route handlers
   services/        ← Business logic classes
   utils/           ← Pure helper functions
   types/           ← Shared TypeScript interfaces/types
@@ -28,7 +28,7 @@
 ### TypeScript
 - Strict mode enabled (`"strict": true` in tsconfig).
 - No `any` — use `unknown` and narrow with type guards.
-- Use WXT's built-in typed storage (`storage.defineItem<T>()`) instead of raw `localStorage`.
+- Use parameterized queries and ORM types instead of raw SQL strings.
 
 ---
 
@@ -41,16 +41,15 @@
 - `ModelService` reads the active provider and key from env vars at startup; validate key existence before making any API call.
 - The Vercel AI SDK is **only ever used on the backend server** — never imported in extension code.
 
-### Content Security Policy (MV3)
-- No `eval()`, `new Function()`, or `unsafe-eval` — MV3 forbids them.
-- No remote script loading — all code must be bundled at build time.
-- `host_permissions` scoped to job-posting domains + your backend server only — **not** to any LLM provider API directly.
+### Transport Security
+- Always use HTTPS in production — never expose LLM endpoints over plain HTTP.
+- Validate and sanitize all incoming request bodies before processing.
+- Rate-limit API endpoints to prevent abuse and runaway LLM costs.
 
-### Messaging & Permissions
-- Use WXT's typed messaging (`defineBackground`, `onMessage`) — never `window.postMessage` between extension contexts.
-- Validate and sanitize all data received from content scripts before using it.
-- Request only the **minimum permissions** required in `manifest`.
-- No logging of sensitive data (API keys, user text) in production.
+### Server Security
+- Validate and sanitize all request data before passing it to LLM calls.
+- Authenticate all AI endpoints — never expose them publicly without auth.
+- No logging of sensitive data (API keys, user text, PII) in production.
 
 ### Supply Chain
 - Pin dependency versions in `package.json` (avoid `^` for critical packages).
@@ -60,10 +59,10 @@
 
 ## Simple & Easy Solutions
 
-- **Prefer built-in WXT APIs** over custom wrappers (storage, messaging, permissions).
+- **Prefer built-in Node.js/framework APIs** over custom wrappers (http, crypto, streams).
 - **Avoid premature abstraction** — don't build a generic system for a single use case.
 - Each function does one thing and has a name that explains it.
-- Streaming responses from LLM providers should be handled on the **backend server** and progress relayed to the UI via WXT messaging — keeps UI logic simple.
+- Streaming responses from LLM providers should be handled on the **backend server** and relayed to clients via HTTP streaming or WebSocket — keeps client logic simple.
 - Prefer `async/await` over `.then()` chains.
 - Use early returns to reduce nesting depth (max 3 levels).
 - Switch LLM providers by changing `MODEL_PROVIDER` + `MODEL_NAME` env vars — no code changes required.
@@ -95,9 +94,7 @@
 ---
 
 ## Sources
-- [WXT Framework](https://wxt.dev/)
 - [Vercel AI SDK Docs](https://sdk.vercel.ai/docs)
 - [Vercel AI SDK Providers](https://sdk.vercel.ai/providers/ai-sdk-providers)
-- [MV3 Content Security Policy — Chrome Developers](https://developer.chrome.com/docs/extensions/mv3/manifest/content_security_policy/)
-- [Browser Extension Security Risks](https://layerxsecurity.com/learn/browser-extension/)
-- [Building AI-Powered Browser Extensions With WXT](https://marmelab.com/blog/2025/04/15/browser-extension-form-ai-wxt.html)
+- [Node.js Best Practices](https://github.com/goldbergyoni/nodebestpractices)
+- [OWASP Node.js Security Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Nodejs_Security_Cheat_Sheet.html)
