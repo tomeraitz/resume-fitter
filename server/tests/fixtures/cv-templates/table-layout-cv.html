@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alex Chen — Resume</title>
+  <style>
+    body { font-family: Verdana, Geneva, sans-serif; font-size: 13px; color: #222; background: #fff; margin: 0; padding: 20px; }
+    table.main-layout { width: 100%; border-collapse: collapse; }
+    td.left-col { width: 200px; vertical-align: top; padding-right: 20px; border-right: 1px solid #bbb; }
+    td.right-col { vertical-align: top; padding-left: 20px; }
+    .name-cell { font-size: 20px; font-weight: bold; padding-bottom: 4px; }
+    .title-cell { font-size: 12px; color: #666; padding-bottom: 12px; border-bottom: 1px solid #ccc; }
+    .section-header { font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.08em; color: #333; padding: 10px 0 4px 0; }
+    .contact-table { width: 100%; border-collapse: collapse; }
+    .contact-table td { padding: 2px 0; font-size: 12px; color: #444; }
+    .skills-table { width: 100%; border-collapse: collapse; }
+    .skills-table td { padding: 2px 4px; font-size: 12px; }
+    .skill-name { color: #333; }
+    .skill-level { color: #888; font-size: 11px; }
+    .right-header { font-size: 22px; font-weight: bold; padding-bottom: 2px; }
+    .right-subtitle { font-size: 12px; color: #555; padding-bottom: 16px; border-bottom: 2px solid #222; margin-bottom: 16px; }
+    .summary-text { line-height: 1.6; padding-bottom: 16px; }
+    table.exp-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+    table.exp-table td { vertical-align: top; padding: 3px 0; }
+    .exp-dates-cell { width: 130px; font-size: 12px; color: #666; white-space: nowrap; }
+    .exp-details-cell { padding-left: 12px; }
+    .exp-job-title { font-weight: bold; font-size: 13px; }
+    .exp-company-name { color: #555; font-style: italic; }
+    ul.exp-list { list-style: square; padding-left: 18px; margin-top: 6px; }
+    ul.exp-list li { margin-bottom: 5px; line-height: 1.5; }
+    table.edu-table { width: 100%; border-collapse: collapse; }
+    table.edu-table td { vertical-align: top; padding: 3px 0; }
+    .edu-dates-cell { width: 130px; font-size: 12px; color: #666; white-space: nowrap; }
+    .edu-details-cell { padding-left: 12px; }
+    .edu-degree-text { font-weight: bold; }
+    .edu-school-text { color: #555; font-style: italic; }
+  </style>
+</head>
+<body>
+  <table class="main-layout">
+    <tr>
+      <td class="left-col">
+        <div class="name-cell">Alex Chen</div>
+        <div class="title-cell">Full-Stack Developer</div>
+
+        <div class="section-header">Contact</div>
+        <table class="contact-table">
+          <tr><td>alex.chen@email.com</td></tr>
+          <tr><td>+1 (415) 555-0182</td></tr>
+          <tr><td>San Francisco, CA</td></tr>
+          <tr><td>github.com/alexchen-dev</td></tr>
+          <tr><td>linkedin.com/in/alexchen</td></tr>
+        </table>
+
+        <div class="section-header">Skills</div>
+        <table class="skills-table">
+          <tr>
+            <td class="skill-name">JavaScript</td>
+            <td class="skill-level">Expert</td>
+          </tr>
+          <tr>
+            <td class="skill-name">TypeScript</td>
+            <td class="skill-level">Advanced</td>
+          </tr>
+          <tr>
+            <td class="skill-name">React</td>
+            <td class="skill-level">Advanced</td>
+          </tr>
+          <tr>
+            <td class="skill-name">Node.js</td>
+            <td class="skill-level">Advanced</td>
+          </tr>
+          <tr>
+            <td class="skill-name">PostgreSQL</td>
+            <td class="skill-level">Advanced</td>
+          </tr>
+          <tr>
+            <td class="skill-name">REST APIs</td>
+            <td class="skill-level">Advanced</td>
+          </tr>
+          <tr>
+            <td class="skill-name">Docker</td>
+            <td class="skill-level">Intermediate</td>
+          </tr>
+          <tr>
+            <td class="skill-name">GitHub Actions</td>
+            <td class="skill-level">Intermediate</td>
+          </tr>
+          <tr>
+            <td class="skill-name">AWS S3 / EC2</td>
+            <td class="skill-level">Intermediate</td>
+          </tr>
+          <tr>
+            <td class="skill-name">Redis</td>
+            <td class="skill-level">Beginner</td>
+          </tr>
+        </table>
+      </td>
+      <td class="right-col">
+        <div class="right-header">Alex Chen</div>
+        <div class="right-subtitle">Full-Stack Software Engineer · 5 Years Experience</div>
+
+        <div class="summary-text">Full-stack software engineer with 5 years of experience building scalable web applications and data-driven dashboards. Proficient in React, Node.js, TypeScript, and PostgreSQL. Experienced with Docker, CI/CD pipelines, and AWS deployments. Track record of shipping robust product features in fast-moving startup and scale-up environments.</div>
+
+        <div class="section-header">Experience</div>
+
+        <table class="exp-table">
+          <tr>
+            <td class="exp-dates-cell">Jun 2019 – May 2021</td>
+            <td class="exp-details-cell">
+              <div class="exp-job-title">Junior Full-Stack Developer</div>
+              <div class="exp-company-name">Loopline Technologies</div>
+              <ul class="exp-list">
+                <li>Built React dashboard components and REST API endpoints in Node.js/Express for a B2B project management SaaS product serving 50+ business clients.</li>
+                <li>Designed PostgreSQL schemas and wrote Knex.js migrations for core product entities (users, projects, tasks, comments), supporting data integrity across the platform.</li>
+                <li>Integrated AWS S3 for file storage, enabling profile image uploads and project attachment management for end users.</li>
+                <li>Contributed to reporting features by building Chart.js dashboards that displayed project completion rates and team velocity using aggregated PostgreSQL query results.</li>
+                <li>Configured GitHub Actions CI pipeline for automated linting and unit tests on every pull request, reducing broken builds reaching staging.</li>
+              </ul>
+            </td>
+          </tr>
+        </table>
+
+        <table class="exp-table">
+          <tr>
+            <td class="exp-dates-cell">Jun 2021 – May 2024</td>
+            <td class="exp-details-cell">
+              <div class="exp-job-title">Mid-Level Full-Stack Developer</div>
+              <div class="exp-company-name">Meridian SaaS</div>
+              <ul class="exp-list">
+                <li>Developed TypeScript React dashboards for a client-facing analytics platform serving 200+ e-commerce businesses, collaborating with product and design teams.</li>
+                <li>Built Node.js/TypeScript REST APIs for data querying, aggregation, and report export (CSV, Excel), reducing average report generation time by 35% through query optimization.</li>
+                <li>Optimized PostgreSQL query performance on tables with 100M+ rows, improving dashboard load times through strategic indexing and query restructuring.</li>
+                <li>Extended GitHub Actions CI/CD pipeline to include automated integration tests, EC2 staging deployments, and Slack notifications, decreasing deployment errors by 50%.</li>
+                <li>Containerized the Node.js API with Docker and used Docker Compose for local multi-service development, standardizing the development environment across a team of 6 engineers.</li>
+                <li>Built ETL scripts in Node.js/TypeScript to ingest client data from CSV uploads and webhook events into PostgreSQL, processing up to 500,000 records per batch.</li>
+              </ul>
+            </td>
+          </tr>
+        </table>
+
+        <div class="section-header">Education</div>
+
+        <table class="edu-table">
+          <tr>
+            <td class="edu-dates-cell">2015 – 2019</td>
+            <td class="edu-details-cell">
+              <div class="edu-degree-text">B.Sc. Computer Science</div>
+              <div class="edu-school-text">Tel Aviv University</div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

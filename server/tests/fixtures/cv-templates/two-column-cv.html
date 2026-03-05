@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alex Chen — Resume</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, Helvetica, sans-serif; font-size: 13px; color: #2c2c2c; background: #fff; max-width: 900px; margin: 0 auto; }
+    .page { display: grid; grid-template-columns: 280px 1fr; min-height: 100vh; }
+    .sidebar { background: #1a1a2e; color: #e0e0e0; padding: 32px 24px; }
+    .main { padding: 32px 28px; }
+    .sidebar h1 { font-size: 22px; color: #ffffff; font-weight: bold; line-height: 1.3; margin-bottom: 4px; }
+    .sidebar .subtitle { font-size: 12px; color: #a0a8c8; margin-bottom: 24px; }
+    .sidebar-section { margin-bottom: 28px; }
+    .sidebar-section h3 { font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.1em; color: #7b8cde; border-bottom: 1px solid #2e2e4a; padding-bottom: 6px; margin-bottom: 12px; }
+    .contact-item { margin-bottom: 8px; font-size: 12px; color: #c8cce8; }
+    .contact-item strong { display: block; color: #a0a8c8; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px; }
+    .skill-bar-label { font-size: 12px; color: #c8cce8; margin-bottom: 4px; }
+    .skill-bar-track { background: #2e2e4a; border-radius: 4px; height: 6px; margin-bottom: 10px; }
+    .skill-bar-fill { background: #7b8cde; border-radius: 4px; height: 6px; }
+    .tag-group { display: flex; flex-wrap: wrap; gap: 5px; }
+    .tag { background: #2e2e4a; color: #c8cce8; font-size: 11px; padding: 3px 8px; border-radius: 3px; }
+    .main h2 { font-size: 14px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.07em; color: #1a1a2e; border-bottom: 2px solid #1a1a2e; padding-bottom: 5px; margin-bottom: 16px; }
+    .summary-text { line-height: 1.6; color: #444; margin-bottom: 28px; }
+    .exp-entry { margin-bottom: 22px; }
+    .exp-meta { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+    .exp-title { font-weight: bold; font-size: 14px; color: #1a1a2e; }
+    .exp-company { color: #555; font-size: 13px; }
+    .exp-dates { font-size: 12px; color: #888; text-align: right; }
+    .exp-bullets { list-style: disc; padding-left: 18px; }
+    .exp-bullets li { margin-bottom: 5px; line-height: 1.5; color: #333; }
+    .edu-entry { display: flex; justify-content: space-between; align-items: flex-start; }
+    .edu-degree { font-weight: bold; color: #1a1a2e; }
+    .edu-school { color: #555; }
+    .edu-dates { font-size: 12px; color: #888; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <aside class="sidebar">
+      <h1>Alex Chen</h1>
+      <p class="subtitle">Full-Stack Developer</p>
+
+      <div class="sidebar-section">
+        <h3>Contact</h3>
+        <div class="contact-item">
+          <strong>Email</strong>
+          alex.chen@email.com
+        </div>
+        <div class="contact-item">
+          <strong>Phone</strong>
+          +1 (415) 555-0182
+        </div>
+        <div class="contact-item">
+          <strong>Location</strong>
+          San Francisco, CA
+        </div>
+        <div class="contact-item">
+          <strong>GitHub</strong>
+          github.com/alexchen-dev
+        </div>
+        <div class="contact-item">
+          <strong>LinkedIn</strong>
+          linkedin.com/in/alexchen
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <h3>Core Skills</h3>
+        <div class="skill-bar-label">JavaScript / TypeScript</div>
+        <div class="skill-bar-track"><div class="skill-bar-fill" style="width:92%"></div></div>
+        <div class="skill-bar-label">React</div>
+        <div class="skill-bar-track"><div class="skill-bar-fill" style="width:88%"></div></div>
+        <div class="skill-bar-label">Node.js</div>
+        <div class="skill-bar-track"><div class="skill-bar-fill" style="width:86%"></div></div>
+        <div class="skill-bar-label">PostgreSQL</div>
+        <div class="skill-bar-track"><div class="skill-bar-fill" style="width:80%"></div></div>
+        <div class="skill-bar-label">Docker</div>
+        <div class="skill-bar-track"><div class="skill-bar-fill" style="width:72%"></div></div>
+      </div>
+
+      <div class="sidebar-section">
+        <h3>Technologies</h3>
+        <div class="tag-group">
+          <span class="tag">REST APIs</span>
+          <span class="tag">GitHub Actions</span>
+          <span class="tag">AWS S3</span>
+          <span class="tag">AWS EC2</span>
+          <span class="tag">Redis</span>
+          <span class="tag">Express.js</span>
+          <span class="tag">Jest</span>
+          <span class="tag">Git</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <section id="summary">
+        <h2>Summary</h2>
+        <p class="summary-text">Full-stack software engineer with 5 years of experience building scalable web applications and data-driven dashboards. Proficient in React, Node.js, TypeScript, and PostgreSQL. Experienced with Docker, CI/CD pipelines, and AWS deployments. Track record of shipping robust product features in fast-moving startup and scale-up environments.</p>
+      </section>
+
+      <section id="experience">
+        <h2>Experience</h2>
+
+        <div class="exp-entry">
+          <div class="exp-meta">
+            <div>
+              <div class="exp-title">Junior Full-Stack Developer</div>
+              <div class="exp-company">Loopline Technologies</div>
+            </div>
+            <div class="exp-dates">Jun 2019 – May 2021</div>
+          </div>
+          <ul class="exp-bullets">
+            <li>Built React dashboard components and REST API endpoints in Node.js/Express for a B2B project management SaaS product serving 50+ business clients.</li>
+            <li>Designed PostgreSQL schemas and wrote Knex.js migrations for core product entities (users, projects, tasks, comments), supporting data integrity across the platform.</li>
+            <li>Integrated AWS S3 for file storage, enabling profile image uploads and project attachment management for end users.</li>
+            <li>Contributed to reporting features by building Chart.js dashboards that displayed project completion rates and team velocity using aggregated PostgreSQL query results.</li>
+            <li>Configured GitHub Actions CI pipeline for automated linting and unit tests on every pull request, reducing broken builds reaching staging.</li>
+          </ul>
+        </div>
+
+        <div class="exp-entry">
+          <div class="exp-meta">
+            <div>
+              <div class="exp-title">Mid-Level Full-Stack Developer</div>
+              <div class="exp-company">Meridian SaaS</div>
+            </div>
+            <div class="exp-dates">Jun 2021 – May 2024</div>
+          </div>
+          <ul class="exp-bullets">
+            <li>Developed TypeScript React dashboards for a client-facing analytics platform serving 200+ e-commerce businesses, collaborating with product and design teams.</li>
+            <li>Built Node.js/TypeScript REST APIs for data querying, aggregation, and report export (CSV, Excel), reducing average report generation time by 35% through query optimization.</li>
+            <li>Optimized PostgreSQL query performance on tables with 100M+ rows, improving dashboard load times through strategic indexing and query restructuring.</li>
+            <li>Extended GitHub Actions CI/CD pipeline to include automated integration tests, EC2 staging deployments, and Slack notifications, decreasing deployment errors by 50%.</li>
+            <li>Containerized the Node.js API with Docker and used Docker Compose for local multi-service development, standardizing the development environment across a team of 6 engineers.</li>
+            <li>Built ETL scripts in Node.js/TypeScript to ingest client data from CSV uploads and webhook events into PostgreSQL, processing up to 500,000 records per batch.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section id="education">
+        <h2>Education</h2>
+        <div class="edu-entry">
+          <div>
+            <div class="edu-degree">B.Sc. Computer Science</div>
+            <div class="edu-school">Tel Aviv University</div>
+          </div>
+          <div class="edu-dates">2015 – 2019</div>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

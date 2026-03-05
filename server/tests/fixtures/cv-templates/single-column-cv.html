@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alex Chen — Resume</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Georgia, serif; font-size: 14px; color: #222; background: #fff; max-width: 760px; margin: 40px auto; padding: 0 32px; }
+    header { border-bottom: 2px solid #333; padding-bottom: 16px; margin-bottom: 24px; }
+    h1 { font-size: 26px; font-weight: bold; letter-spacing: 0.04em; }
+    .contact { font-size: 13px; color: #555; margin-top: 6px; }
+    .contact span { margin-right: 16px; }
+    section { margin-bottom: 28px; }
+    h2 { font-size: 15px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 1px solid #ccc; padding-bottom: 4px; margin-bottom: 14px; }
+    .job { margin-bottom: 18px; }
+    .job-header { display: flex; justify-content: space-between; align-items: baseline; }
+    .job-title { font-weight: bold; font-size: 14px; }
+    .job-company { font-style: italic; color: #444; }
+    .job-dates { font-size: 13px; color: #666; white-space: nowrap; }
+    ul { list-style: disc; padding-left: 20px; margin-top: 8px; }
+    li { margin-bottom: 5px; line-height: 1.5; }
+    .skills-list { display: flex; flex-wrap: wrap; gap: 6px; }
+    .skill-tag { background: #f0f0f0; border: 1px solid #ddd; border-radius: 3px; padding: 2px 8px; font-size: 13px; }
+    .education-entry { display: flex; justify-content: space-between; align-items: baseline; }
+    .degree { font-weight: bold; }
+    .institution { font-style: italic; color: #444; }
+    .edu-dates { font-size: 13px; color: #666; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Alex Chen</h1>
+    <div class="contact">
+      <span>alex.chen@email.com</span>
+      <span>+1 (415) 555-0182</span>
+      <span>San Francisco, CA</span>
+      <span>github.com/alexchen-dev</span>
+      <span>linkedin.com/in/alexchen</span>
+    </div>
+  </header>
+
+  <section id="summary">
+    <h2>Summary</h2>
+    <p>Full-stack software engineer with 5 years of experience building scalable web applications and data-driven dashboards. Proficient in React, Node.js, TypeScript, and PostgreSQL. Experienced with Docker, CI/CD pipelines, and AWS deployments. Track record of shipping robust product features in fast-moving startup and scale-up environments.</p>
+  </section>
+
+  <section id="experience">
+    <h2>Experience</h2>
+
+    <div class="job">
+      <div class="job-header">
+        <div>
+          <span class="job-title">Junior Full-Stack Developer</span>
+          <span class="job-company"> — Loopline Technologies</span>
+        </div>
+        <span class="job-dates">Jun 2019 – May 2021</span>
+      </div>
+      <ul>
+        <li>Built React dashboard components and REST API endpoints in Node.js/Express for a B2B project management SaaS product serving 50+ business clients.</li>
+        <li>Designed PostgreSQL schemas and wrote Knex.js migrations for core product entities (users, projects, tasks, comments), supporting data integrity across the platform.</li>
+        <li>Integrated AWS S3 for file storage, enabling profile image uploads and project attachment management for end users.</li>
+        <li>Contributed to reporting features by building Chart.js dashboards that displayed project completion rates and team velocity using aggregated PostgreSQL query results.</li>
+        <li>Configured GitHub Actions CI pipeline for automated linting and unit tests on every pull request, reducing broken builds reaching staging.</li>
+      </ul>
+    </div>
+
+    <div class="job">
+      <div class="job-header">
+        <div>
+          <span class="job-title">Mid-Level Full-Stack Developer</span>
+          <span class="job-company"> — Meridian SaaS</span>
+        </div>
+        <span class="job-dates">Jun 2021 – May 2024</span>
+      </div>
+      <ul>
+        <li>Developed TypeScript React dashboards for a client-facing analytics platform serving 200+ e-commerce businesses, collaborating with product and design teams.</li>
+        <li>Built Node.js/TypeScript REST APIs for data querying, aggregation, and report export (CSV, Excel), reducing average report generation time by 35% through query optimization.</li>
+        <li>Optimized PostgreSQL query performance on tables with 100M+ rows, improving dashboard load times through strategic indexing and query restructuring.</li>
+        <li>Extended GitHub Actions CI/CD pipeline to include automated integration tests, EC2 staging deployments, and Slack notifications, decreasing deployment errors by 50%.</li>
+        <li>Containerized the Node.js API with Docker and used Docker Compose for local multi-service development, standardizing the development environment across a team of 6 engineers.</li>
+        <li>Built ETL scripts in Node.js/TypeScript to ingest client data from CSV uploads and webhook events into PostgreSQL, processing up to 500,000 records per batch.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="skills">
+    <h2>Skills</h2>
+    <div class="skills-list">
+      <span class="skill-tag">JavaScript</span>
+      <span class="skill-tag">TypeScript</span>
+      <span class="skill-tag">React</span>
+      <span class="skill-tag">Node.js</span>
+      <span class="skill-tag">Express.js</span>
+      <span class="skill-tag">PostgreSQL</span>
+      <span class="skill-tag">REST APIs</span>
+      <span class="skill-tag">Docker</span>
+      <span class="skill-tag">GitHub Actions</span>
+      <span class="skill-tag">AWS S3</span>
+      <span class="skill-tag">AWS EC2</span>
+      <span class="skill-tag">Redis</span>
+      <span class="skill-tag">Git</span>
+      <span class="skill-tag">Jest</span>
+    </div>
+  </section>
+
+  <section id="education">
+    <h2>Education</h2>
+    <div class="education-entry">
+      <div>
+        <span class="degree">B.Sc. Computer Science</span>
+        <span class="institution"> — Tel Aviv University</span>
+      </div>
+      <span class="edu-dates">2015 – 2019</span>
+    </div>
+  </section>
+</body>
+</html>

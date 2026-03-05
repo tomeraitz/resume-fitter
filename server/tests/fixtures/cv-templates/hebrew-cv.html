@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>אלכס צ'ן — קורות חיים</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Georgia, serif; font-size: 14px; color: #222; background: #fff; max-width: 760px; margin: 40px auto; padding: 0 32px; direction: rtl; }
+    header { border-bottom: 2px solid #333; padding-bottom: 16px; margin-bottom: 24px; }
+    h1 { font-size: 26px; font-weight: bold; letter-spacing: 0.04em; }
+    .contact { font-size: 13px; color: #555; margin-top: 6px; }
+    .contact span { margin-left: 16px; }
+    section { margin-bottom: 28px; }
+    h2 { font-size: 15px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 1px solid #ccc; padding-bottom: 4px; margin-bottom: 14px; }
+    .job { margin-bottom: 18px; }
+    .job-header { display: flex; justify-content: space-between; align-items: baseline; }
+    .job-title { font-weight: bold; font-size: 14px; }
+    .job-company { font-style: italic; color: #444; }
+    .job-dates { font-size: 13px; color: #666; white-space: nowrap; }
+    ul { list-style: disc; padding-right: 20px; padding-left: 0; margin-top: 8px; }
+    li { margin-bottom: 5px; line-height: 1.5; }
+    .skills-list { display: flex; flex-wrap: wrap; gap: 6px; }
+    .skill-tag { background: #f0f0f0; border: 1px solid #ddd; border-radius: 3px; padding: 2px 8px; font-size: 13px; }
+    .education-entry { display: flex; justify-content: space-between; align-items: baseline; }
+    .degree { font-weight: bold; }
+    .institution { font-style: italic; color: #444; }
+    .edu-dates { font-size: 13px; color: #666; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>אלכס צ'ן</h1>
+    <div class="contact">
+      <span>alex.chen@email.com</span>
+      <span>+1 (415) 555-0182</span>
+      <span>סן פרנסיסקו, קליפורניה</span>
+      <span>github.com/alexchen-dev</span>
+      <span>linkedin.com/in/alexchen</span>
+    </div>
+  </header>
+
+  <section id="summary">
+    <h2>תקציר</h2>
+    <p>מפתח תוכנה Full-Stack עם 5 שנות ניסיון בבניית אפליקציות ווב מדרגיות ודשבורדים מונחי נתונים. בקיא ב-React, Node.js, TypeScript ו-PostgreSQL. ניסיון עם Docker, צינורות CI/CD ופריסות AWS. רקורד מוכח של שילוח פיצ'רים איכותיים בסביבות סטארטאפ וחברות בצמיחה.</p>
+  </section>
+
+  <section id="experience">
+    <h2>ניסיון תעסוקתי</h2>
+
+    <div class="job">
+      <div class="job-header">
+        <div>
+          <span class="job-title">מפתח Full-Stack בכיר</span>
+          <span class="job-company"> — Loopline Technologies</span>
+        </div>
+        <span class="job-dates">יוני 2019 – מאי 2021</span>
+      </div>
+      <ul>
+        <li>פיתחתי קומפוננטות דשבורד ב-React ונקודות קצה ב-Node.js/Express עבור מוצר SaaS לניהול פרויקטים B2B המשרת למעלה מ-50 לקוחות עסקיים.</li>
+        <li>עיצבתי סכמות PostgreSQL וכתבתי מיגרציות Knex.js לישויות הליבה של המוצר (משתמשים, פרויקטים, משימות, תגובות), תוך שמירה על שלמות הנתונים בכל הפלטפורמה.</li>
+        <li>שילבתי AWS S3 לאחסון קבצים, מה שאיפשר העלאת תמונות פרופיל וניהול קבצים מצורפים לפרויקטים עבור משתמשי הקצה.</li>
+        <li>תרמתי לפיצ'רים של דיווח על ידי בניית דשבורדים ב-Chart.js שהציגו שיעורי השלמת פרויקטים ומהירות צוות באמצעות שאילתות PostgreSQL מצטברות.</li>
+        <li>הגדרתי צינור CI של GitHub Actions לבדיקות lint ובדיקות יחידה אוטומטיות על כל בקשת משיכה, מה שהפחית בילדים שבורים שהגיעו לסביבת staging.</li>
+      </ul>
+    </div>
+
+    <div class="job">
+      <div class="job-header">
+        <div>
+          <span class="job-title">מפתח Full-Stack בכיר-ביניים</span>
+          <span class="job-company"> — Meridian SaaS</span>
+        </div>
+        <span class="job-dates">יוני 2021 – מאי 2024</span>
+      </div>
+      <ul>
+        <li>פיתחתי דשבורדים ב-TypeScript React עבור פלטפורמת אנליטיקה המשרתת למעלה מ-200 עסקי מסחר אלקטרוני, בשיתוף פעולה עם צוותי מוצר ועיצוב.</li>
+        <li>בניתי REST APIs ב-Node.js/TypeScript לשאילתות נתונים, אגרגציה וייצוא דוחות (CSV, Excel), תוך הפחתת זמן יצירת דוח ממוצע ב-35% באמצעות אופטימיזציית שאילתות.</li>
+        <li>אופטימיזציה של ביצועי שאילתות PostgreSQL על טבלאות עם למעלה מ-100 מיליון שורות, שיפרתי את זמני טעינת הדשבורד באמצעות אינדוקס אסטרטגי ושינוי מבנה שאילתות.</li>
+        <li>הרחבתי את צינור ה-CI/CD של GitHub Actions לכלול בדיקות אינטגרציה אוטומטיות, פריסות EC2 לסביבת staging והתראות Slack, מה שהפחית שגיאות פריסה ב-50%.</li>
+        <li>הכנסתי ל-Docker את שירות ה-Node.js API והשתמשתי ב-Docker Compose לפיתוח מקומי רב-שירותים, תקנתי את סביבת הפיתוח עבור צוות של 6 מהנדסים.</li>
+        <li>בניתי סקריפטים ETL ב-Node.js/TypeScript לעיבוד נתוני לקוחות מהעלאות CSV ואירועי webhook ל-PostgreSQL, עם עיבוד של עד 500,000 רשומות לאצווה.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="skills">
+    <h2>כישורים טכניים</h2>
+    <div class="skills-list">
+      <span class="skill-tag">JavaScript</span>
+      <span class="skill-tag">TypeScript</span>
+      <span class="skill-tag">React</span>
+      <span class="skill-tag">Node.js</span>
+      <span class="skill-tag">Express.js</span>
+      <span class="skill-tag">PostgreSQL</span>
+      <span class="skill-tag">REST APIs</span>
+      <span class="skill-tag">Docker</span>
+      <span class="skill-tag">GitHub Actions</span>
+      <span class="skill-tag">AWS S3</span>
+      <span class="skill-tag">AWS EC2</span>
+      <span class="skill-tag">Redis</span>
+      <span class="skill-tag">Git</span>
+      <span class="skill-tag">Jest</span>
+    </div>
+  </section>
+
+  <section id="education">
+    <h2>השכלה</h2>
+    <div class="education-entry">
+      <div>
+        <span class="degree">תואר ראשון במדעי המחשב</span>
+        <span class="institution"> — אוניברסיטת תל אביב</span>
+      </div>
+      <span class="edu-dates">2015 – 2019</span>
+    </div>
+  </section>
+</body>
+</html>

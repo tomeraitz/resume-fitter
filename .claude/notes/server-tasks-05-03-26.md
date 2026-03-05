@@ -11,15 +11,10 @@
 | `agents/rewrite-resume.ts` | Same |
 | `agents/ats-scanner.ts` | Same |
 | `agents/verifier.ts` | Same |
-| `prompts/hiring-manager.md` | Empty placeholder — no actual system prompt |
-| `prompts/rewrite-resume.md` | Same |
-| `prompts/ats-scanner.md` | Same |
-| `prompts/verifier.md` | Same |
 
 ## Recommended implementation order
 
-1. Write the 4 system prompts (`.md` files) — everything else depends on knowing what each agent does
-2. Implement the 4 agents (load prompt → call model → Zod-validate)
-3. Implement orchestrator (wire agents sequentially, collect `AgentResult[]`)
-4. Implement pipeline route (Zod request validation + call orchestrator)
-5. Implement auth middleware (JWT verify)
+1. Implement the 4 agents (load prompt → call model → Zod-validate)
+2. Implement orchestrator (wire agents sequentially, collect `AgentResult[]`)
+3. Implement pipeline route (Zod request validation + call orchestrator)
+4. Implement auth middleware (JWT verify)

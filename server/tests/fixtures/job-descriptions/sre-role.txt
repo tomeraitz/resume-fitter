@@ -1,0 +1,39 @@
+Site Reliability Engineer
+CloudScale Inc. — Remote (US/EU timezones)
+
+About CloudScale Inc.
+CloudScale Inc. is a cloud infrastructure platform serving 500+ enterprise customers. Our SRE team owns reliability, scalability, and operational excellence across a distributed microservices architecture running on Kubernetes at scale.
+
+About the Role
+We are looking for an experienced Site Reliability Engineer to join our platform team. You will be responsible for designing and maintaining the infrastructure that keeps our systems running at 99.99% uptime. You will own oncall rotations, respond to incidents, and drive post-mortem culture.
+
+Responsibilities
+- Design, implement, and maintain Kubernetes clusters (EKS) across multiple regions
+- Define and track Service Level Objectives (SLOs) and manage SLO budgets and error budgets for critical services
+- Participate in oncall rotations (1 week per 6 weeks), lead incident response and write post-mortems
+- Build and maintain infrastructure-as-code using Terraform for cloud resource provisioning (AWS)
+- Implement and maintain observability stack: Prometheus for metrics collection, Grafana dashboards, and PagerDuty for alerting and incident management
+- Drive cost optimization initiatives across AWS services; identify and eliminate waste in compute and storage spend
+- Collaborate with development teams to establish SLIs, SLOs, and error budget policies
+- Build and maintain CI/CD pipelines for infrastructure deployments
+
+Requirements
+- 3+ years of SRE or DevOps experience in a production environment
+- Deep expertise with Kubernetes (cluster administration, RBAC, networking, autoscaling)
+- Proficiency with Terraform for infrastructure-as-code
+- Experience with Prometheus, Grafana, and production metrics infrastructure
+- Hands-on experience with PagerDuty or similar incident management platform
+- Proven track record of oncall rotations and incident management at scale
+- Experience defining and managing SLO budgets and error budgets
+- Strong understanding of cost optimization in cloud environments (AWS preferred)
+- Experience with containerization (Docker) and microservices architectures
+- Scripting proficiency: Python or Go preferred; bash required
+- Familiarity with gRPC for service-to-service communication
+
+Nice to Have
+- Experience with service meshes (Istio, Linkerd)
+- Certified Kubernetes Administrator (CKA)
+- Experience with chaos engineering tools (Gremlin, Chaos Monkey)
+
+Compensation
+$150,000–$185,000 base salary + equity + benefits
