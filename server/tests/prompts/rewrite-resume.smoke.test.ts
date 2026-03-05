@@ -8,13 +8,30 @@ const fixtures = join(import.meta.dirname, '../fixtures');
 
 const singleColumnCv = readFileSync(join(fixtures, 'cv-templates/single-column-cv.html'), 'utf8');
 
+const KEYWORDS = ['PostgreSQL', 'CI/CD', 'REST APIs'];
+
 describe('rewrite-resume agent — smoke test', () => {
   it('returns valid JSON matching RewriteResumeOutputSchema', async () => {
     const result = await runAgent('rewrite-resume', {
-      missingKeywords: ['PostgreSQL', 'CI/CD', 'REST APIs'],
+      missingKeywords: KEYWORDS,
       cvTemplate: singleColumnCv,
       cvLanguage: 'en',
     });
     expect(() => RewriteResumeOutputSchema.parse(result)).not.toThrow();
+  });
+
+  it('keywords not in keywordsNotAdded must appear in updatedCvHtml', async () => {
+    const result = await runAgent('rewrite-resume', {
+      missingKeywords: KEYWORDS,
+      cvTemplate: singleColumnCv,
+      cvLanguage: 'en',
+    }) as any;
+    RewriteResumeOutputSchema.parse(result);
+    const skipped = new Set<string>(result.keywordsNotAdded.map((k: any) => k.keyword.toLowerCase()));
+    for (const keyword of KEYWORDS) {
+      if (!skipped.has(keyword.toLowerCase())) {
+        expect(result.updatedCvHtml.toLowerCase()).toContain(keyword.toLowerCase());
+      }
+    }
   });
 });

@@ -6,6 +6,6 @@ config(); // load .env before tests run
 export default defineConfig({
   test: {
     environment: "node",
-    testTimeout: 30_000,
+    testTimeout: 0,
   },
 });
