@@ -9,13 +9,16 @@ import {
 } from './schemas.js';
 import { runAgent } from './test-utils.js';
 
+const RUN = process.env.TEST_EVAL === 'true';
+const describeIf = (cond: boolean) => (cond ? describe : describe.skip);
+
 const fixtures = join(import.meta.dirname, '../fixtures');
 
 const hebrewCv = readFileSync(join(fixtures, 'cv-templates/hebrew-cv.html'), 'utf8');
 const fullstackRole = readFileSync(join(fixtures, 'job-descriptions/fullstack-role.txt'), 'utf8');
 const history = readFileSync(join(fixtures, 'histories/candidate-history.md'), 'utf8');
 
-describe('language handling — smoke tests', () => {
+describeIf(RUN)('language handling — smoke tests', () => {
   it('Agent 1 detects Hebrew CV and sets cvLanguage="he"', async () => {
     const result = await runAgent('hiring-manager', {
       jobDescription: fullstackRole,
