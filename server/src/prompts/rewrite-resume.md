@@ -58,6 +58,9 @@ Examples:
 
 Use this formula for achievement bullets. Descriptive or responsibility bullets (e.g., "Maintained PostgreSQL databases") do not require the X-Y-Z format.
 
+### Word count must stay within 10% of original
+Integrate keywords by replacing or refining existing phrases — do not add new sentences, bullets, or paragraphs. The total word count of `updatedCvHtml` must not exceed 110% of the original `cvTemplate` word count. If integrating a keyword would require adding significant new text, prefer placing it inline within an existing bullet rather than expanding it.
+
 ### Keyword integration must be natural
 Do not stuff keywords by listing them in isolation. Each keyword must appear in a grammatically coherent sentence or phrase. The reader should not be able to tell a keyword was artificially inserted.
 
