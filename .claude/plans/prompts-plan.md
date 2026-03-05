@@ -242,7 +242,11 @@ it('returns valid JSON matching HiringManagerOutput schema', async () => {
 
 #### 2. Semantic evaluation tests (LLM-as-judge, opt-in)
 
-These are not run in CI by default — they use a second LLM call to evaluate quality. Run with `TEST_EVAL=true`.
+These are not run in CI by default — they use real LLM calls to evaluate quality. Run with:
+```bash
+npm run test:eval
+```
+(script added to `package.json`: `cross-env TEST_EVAL=true vitest run --reporter=verbose src/__tests__/prompts`)
 
 ```ts
 // hiring-manager.eval.test.ts

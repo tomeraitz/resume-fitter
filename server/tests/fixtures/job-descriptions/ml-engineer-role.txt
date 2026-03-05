@@ -1,0 +1,38 @@
+Machine Learning Engineer
+NeuralEdge AI — Remote
+
+About NeuralEdge AI
+NeuralEdge AI is an early-stage AI startup building recommendation and personalization systems for e-commerce. Our ML team trains and deploys models that power real-time product recommendations for millions of users. We move fast and care deeply about model quality and production reliability.
+
+About the Role
+We are looking for a Machine Learning Engineer to join our core ML team. You will own the full ML lifecycle: from data pipelines and feature engineering through model training, evaluation, and production deployment. You must be comfortable writing production Python code, running experiments, and operating MLOps infrastructure.
+
+Responsibilities
+- Design and implement data pipelines for ingesting, cleaning, and transforming training data
+- Build feature engineering pipelines and maintain feature stores for model training and serving
+- Train, evaluate, and tune deep learning models using PyTorch
+- Track experiments and manage model versions using MLflow or Weights & Biases (W&B)
+- Deploy models to production and monitor model performance and data drift
+- Build and maintain ML training infrastructure using Docker and Kubernetes
+- Collaborate with data engineers and product teams to define model inputs and business objectives
+- Write clean, testable Python code for all ML components
+
+Requirements
+- 2+ years of ML engineering experience in a production environment
+- Strong Python proficiency (primary language for all ML work)
+- Hands-on experience with PyTorch for model training and inference
+- Experience with MLOps tooling: MLflow, Weights & Biases, DVC, or equivalent experiment tracking and model registry tools
+- Experience building data pipelines and feature engineering for ML models
+- Familiarity with Kubernetes for deploying and scaling model serving infrastructure
+- Experience with Docker for containerization of ML workloads
+- Understanding of model evaluation metrics, cross-validation, and statistical testing
+- Experience with experiment tracking and reproducibility best practices
+
+Nice to Have
+- Experience with recommendation systems or ranking models
+- Familiarity with Apache Spark or similar distributed data processing
+- Contributions to open-source ML projects
+- Experience with real-time model serving (TorchServe, Triton Inference Server)
+
+Compensation
+$130,000–$165,000 base salary + equity + benefits

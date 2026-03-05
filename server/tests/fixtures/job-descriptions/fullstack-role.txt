@@ -1,0 +1,40 @@
+Full-Stack Developer
+Vantage SaaS — Hybrid (Tel Aviv / Remote)
+
+About Vantage SaaS
+Vantage SaaS is a B2B analytics platform helping e-commerce businesses understand their customer data. We build data-rich dashboards, reporting tools, and API integrations for 300+ clients. Our engineering team is 25 people and growing.
+
+About the Role
+We are looking for a Full-Stack Developer to join our product team. You will build new features across the entire stack — from React UI components to Node.js API services to PostgreSQL schemas. You will work closely with product and design to ship features that directly impact our customers.
+
+Responsibilities
+- Design and implement React components and pages for our client-facing analytics dashboards
+- Build and maintain REST APIs in Node.js/TypeScript for data querying, aggregation, and client integrations
+- Design PostgreSQL schemas and write optimized queries for large datasets
+- Collaborate with the data team to integrate external data sources and client webhook events
+- Own features end-to-end: from technical design through testing and production deployment
+- Maintain and improve CI/CD pipelines using GitHub Actions
+- Write unit and integration tests; maintain test coverage above 80%
+- Participate in code reviews and contribute to engineering standards
+- Containerize services with Docker for consistent development and staging environments
+
+Requirements
+- 3+ years of full-stack development experience
+- Strong proficiency with React (hooks, context, component design patterns)
+- Strong proficiency with Node.js and TypeScript for backend API development
+- Solid understanding of PostgreSQL: schema design, query optimization, indexing strategies
+- Experience designing and consuming REST APIs
+- Hands-on experience with CI/CD pipelines (GitHub Actions preferred)
+- Experience with Docker for local development and containerization
+- Familiarity with AWS services (S3, EC2, or similar)
+- Strong understanding of TypeScript across both frontend and backend
+- Experience writing tests with Jest or a similar framework
+
+Nice to Have
+- Experience with Redis for caching
+- Exposure to data pipeline work (ETL, webhooks, CSV processing)
+- Experience with reporting or dashboard-building features
+- Familiarity with charting libraries (Chart.js, D3, Recharts)
+
+Compensation
+$110,000–$140,000 base salary + equity + benefits

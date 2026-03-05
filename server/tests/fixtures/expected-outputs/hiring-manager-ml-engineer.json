@@ -1,0 +1,4 @@
+{
+  "matchScoreRange": { "min": 15, "max": 40 },
+  "requiredMissingKeywords": ["PyTorch", "MLOps", "Python"]
+}

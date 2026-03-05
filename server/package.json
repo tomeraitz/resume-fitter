@@ -9,7 +9,8 @@
     "start": "node dist/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:integration": "cross-env RUN_INTEGRATION_TESTS=true vitest run --reporter=verbose tests/model.service.integration.test.ts"
+    "test:integration": "cross-env RUN_INTEGRATION_TESTS=true vitest run --reporter=verbose tests/model.service.integration.test.ts",
+    "test:eval": "cross-env TEST_EVAL=true vitest run --reporter=verbose tests/prompts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "3.0.54",
