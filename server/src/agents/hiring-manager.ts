@@ -1,22 +1,34 @@
+import { readFileSync } from "fs";
+import { join } from "path";
+import { z } from "zod";
 import type { ModelService } from "../services/model.service.js";
 
-export interface HiringManagerOutput {
-  matchScore: number;
-  missingKeywords: string[];
-}
+const systemPrompt = readFileSync(
+  join(import.meta.dirname, "../prompts/hiring-manager.md"),
+  "utf8",
+);
+
+export const HiringManagerOutputSchema = z.object({
+  matchScore: z.number(),
+  cvLanguage: z.string(),
+  missingKeywords: z.array(z.string()),
+  summary: z.string(),
+});
+
+export type HiringManagerOutput = z.infer<typeof HiringManagerOutputSchema>;
 
 export async function runHiringManager(
   modelService: ModelService,
   jobDescription: string,
   cvTemplate: string,
-  history: string,
+  history?: string,
 ): Promise<HiringManagerOutput> {
-  // TODO: load hiring-manager.md system prompt
-  // TODO: call modelService.complete(systemPrompt, userPrompt)
-  // TODO: parse and Zod-validate the JSON response
-  void modelService;
-  void jobDescription;
-  void cvTemplate;
-  void history;
-  throw new Error("Not implemented");
+  const userPrompt = JSON.stringify({ jobDescription, cvTemplate, history });
+  const raw = await modelService.complete(systemPrompt, userPrompt);
+  const text = raw
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```\s*$/i, "")
+    .trim();
+  const parsed: unknown = JSON.parse(text);
+  return HiringManagerOutputSchema.parse(parsed);
 }

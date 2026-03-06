@@ -1,18 +1,30 @@
+import { readFileSync } from "fs";
+import { join } from "path";
+import { z } from "zod";
 import type { ModelService } from "../services/model.service.js";
 
-export interface AtsScannerOutput {
-  atsScore: number;
-  problemAreas: string[];
-}
+const systemPrompt = readFileSync(
+  join(import.meta.dirname, "../prompts/ats-scanner.md"),
+  "utf8",
+);
+
+export const AtsScannerOutputSchema = z.object({
+  atsScore: z.number(),
+  problemAreas: z.array(z.string()),
+});
+
+export type AtsScannerOutput = z.infer<typeof AtsScannerOutputSchema>;
 
 export async function runAtsScanner(
   modelService: ModelService,
   updatedCvHtml: string,
 ): Promise<AtsScannerOutput> {
-  // TODO: load ats-scanner.md system prompt
-  // TODO: call modelService.complete(systemPrompt, userPrompt)
-  // TODO: parse and Zod-validate the JSON response
-  void modelService;
-  void updatedCvHtml;
-  throw new Error("Not implemented");
+  const userPrompt = JSON.stringify({ updatedCvHtml });
+  const raw = await modelService.complete(systemPrompt, userPrompt);
+  const text = raw
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```\s*$/i, "")
+    .trim();
+  const parsed: unknown = JSON.parse(text);
+  return AtsScannerOutputSchema.parse(parsed);
 }
