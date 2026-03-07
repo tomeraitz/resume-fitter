@@ -18,8 +18,10 @@ export type AtsScannerOutput = z.infer<typeof AtsScannerOutputSchema>;
 export async function runAtsScanner(
   modelService: ModelService,
   updatedCvHtml: string,
+  cvLanguage: string = 'en',
+  jobDescription: string = '',
 ): Promise<AtsScannerOutput> {
-  const userPrompt = JSON.stringify({ updatedCvHtml });
+  const userPrompt = JSON.stringify({ updatedCvHtml, cvLanguage, jobDescription });
   const raw = await modelService.complete(systemPrompt, userPrompt);
   const text = raw
     .replace(/^```(?:json)?\s*/i, "")

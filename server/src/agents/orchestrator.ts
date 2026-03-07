@@ -36,7 +36,7 @@ export async function runPipeline(
   steps.push({ step: 2, name: "rewrite-resume", output: rewriteResumeResult, durationMs: Date.now() - rewriteResumeStart });
 
   const atsScannerStart = Date.now();
-  const atsScannerResult = await runAtsScanner(modelService, rewriteResumeResult.updatedCvHtml);
+  const atsScannerResult = await runAtsScanner(modelService, rewriteResumeResult.updatedCvHtml, hiringManagerResult.cvLanguage, request.jobDescription);
   steps.push({ step: 3, name: "ats-scanner", output: atsScannerResult, durationMs: Date.now() - atsScannerStart });
 
   const verifierStart = Date.now();
