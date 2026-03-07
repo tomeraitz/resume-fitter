@@ -24,7 +24,7 @@ const agentMap: Record<AgentName, (inputs: Record<string, unknown>) => Promise<u
       inputs['cvLanguage'] as string,
     ),
   'ats-scanner': (inputs) =>
-    runAtsScanner(modelService, inputs['updatedCvHtml'] as string),
+    runAtsScanner(modelService, inputs['updatedCvHtml'] as string, inputs['cvLanguage'] as string | undefined, inputs['jobDescription'] as string | undefined),
   'verifier': (inputs) =>
     runVerifier(
       modelService,

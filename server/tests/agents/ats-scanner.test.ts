@@ -14,7 +14,7 @@ describe("runAtsScanner", () => {
     const payload = { atsScore: 90, problemAreas: [] };
     mockComplete.mockResolvedValue(JSON.stringify(payload));
 
-    const result = await runAtsScanner(mockService, "<p>cv</p>");
+    const result = await runAtsScanner(mockService, "<p>cv</p>", "en", "job desc");
 
     expect(result.atsScore).toBe(90);
     expect(result.problemAreas).toEqual([]);
