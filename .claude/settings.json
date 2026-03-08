@@ -10,20 +10,6 @@
           {
             "type": "command",
             "command": "echo '{\"additionalContext\": \"Before starting any task, ask clarifying questions to ensure you fully understand the requirements. Do not make assumptions.\"}'"
-          },
-          {
-            "type": "command",
-            "command": "powershell -ExecutionPolicy Bypass -File .claude/prevent_sleep.ps1"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "powershell -ExecutionPolicy Bypass -File .claude/allow_sleep.ps1"
           }
         ]
       }
