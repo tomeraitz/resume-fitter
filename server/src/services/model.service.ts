@@ -96,11 +96,8 @@ export class ModelService {
     userPrompt: string,
   ): Promise<CompletionMeta> {
     const model = buildModel(config);
-    const cachingEnabled =
-      config.provider === 'anthropic' &&
-      process.env['OPTIMIZATION_PROMPT_CACHING'] === 'true';
 
-    if (cachingEnabled) {
+    if (config.provider === 'anthropic') {
       const result = await generateText({
         model,
         messages: [

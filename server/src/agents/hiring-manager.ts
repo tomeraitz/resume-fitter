@@ -24,10 +24,7 @@ export async function runHiringManager(
   cvTemplate: string,
   history?: string,
 ): Promise<HiringManagerOutput> {
-  const cvContent = process.env['OPTIMIZATION_HTML_STRIP'] === 'true'
-    ? stripHtml(cvTemplate)
-    : cvTemplate;
-  const userPrompt = JSON.stringify({ jobDescription, cvTemplate: cvContent, history });
+  const userPrompt = JSON.stringify({ jobDescription, cvTemplate: stripHtml(cvTemplate), history });
   const raw = await modelService.complete(systemPrompt, userPrompt);
   const text = raw
     .replace(/^```(?:json)?\s*/i, "")

@@ -1,3 +1,4 @@
+import * as http from "http";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import request from "supertest";
 import express from "express";
@@ -33,6 +34,53 @@ function buildApp() {
   return app;
 }
 
+/**
+ * Collect the full SSE response body using Node's native http module.
+ * Superagent/supertest consume the stream internally before the custom parser
+ * can attach listeners, so we bypass them entirely for SSE routes.
+ */
+async function getSseText(app: express.Express, body: object): Promise<{ status: number; headers: Record<string, string>; text: string }> {
+  return new Promise((resolve, reject) => {
+    const server = app.listen(0, '127.0.0.1', () => {
+      const port = (server.address() as { port: number }).port;
+      const payload = JSON.stringify(body);
+      const req = http.request({
+        hostname: '127.0.0.1',
+        port,
+        path: '/pipeline',
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) },
+      }, (res) => {
+        let text = '';
+        res.setEncoding('utf8');
+        res.on('data', (chunk: string) => { text += chunk; });
+        res.on('end', () => { server.close(() => resolve({ status: res.statusCode ?? 0, headers: res.headers as Record<string, string>, text })); });
+        res.on('error', (err) => server.close(() => reject(err)));
+      });
+      req.on('error', (err) => server.close(() => reject(err)));
+      req.write(payload);
+      req.end();
+    });
+  });
+}
+
+/** Parse SSE response text into a list of { event, data } objects. */
+function parseSseEvents(text: string): Array<{ event: string; data: unknown }> {
+  return text
+    .split('\n\n')
+    .filter(Boolean)
+    .map(block => {
+      const lines = block.split('\n');
+      const eventLine = lines.find(l => l.startsWith('event:'));
+      const dataLine = lines.find(l => l.startsWith('data:'));
+      return {
+        event: eventLine ? eventLine.slice(7).trim() : '',
+        data: dataLine ? JSON.parse(dataLine.slice(5).trim()) : null,
+      };
+    })
+    .filter(e => e.event);
+}
+
 const VALID_BODY = {
   jobDescription: "We need an SRE.",
   cvTemplate: "<html>cv</html>",
@@ -53,16 +101,16 @@ describe("POST /pipeline", () => {
     mockRunPipeline.mockReset();
   });
 
-  it("returns 200 with PipelineResponse shape on a valid request", async () => {
+  it("streams SSE with step events and a done event on a valid request", async () => {
     mockRunPipeline.mockResolvedValueOnce(PIPELINE_RESPONSE);
-    const res = await request(buildApp())
-      .post("/pipeline")
-      .send(VALID_BODY);
+    const { status, headers, text } = await getSseText(buildApp(), VALID_BODY);
 
-    expect(res.status).toBe(200);
-    expect(Array.isArray(res.body.steps)).toBe(true);
-    expect(res.body.steps).toHaveLength(4);
-    expect(typeof res.body.finalCv).toBe("string");
+    expect(status).toBe(200);
+    expect(headers['content-type']).toContain('text/event-stream');
+    const events = parseSseEvents(text);
+    const doneEvent = events.find(e => e.event === 'done');
+    expect(doneEvent).toBeDefined();
+    expect((doneEvent!.data as any).finalCv).toBe(PIPELINE_RESPONSE.finalCv);
   });
 
   it("returns 400 when jobDescription is missing", async () => {
@@ -84,29 +132,31 @@ describe("POST /pipeline", () => {
     expect(res.body.error).toBe("Invalid request");
   });
 
-  it("returns 500 when runPipeline throws a generic Error", async () => {
+  it("streams an error SSE event when runPipeline throws a generic Error", async () => {
     mockRunPipeline.mockRejectedValueOnce(new Error("Something went wrong"));
-    const res = await request(buildApp())
-      .post("/pipeline")
-      .send(VALID_BODY);
+    const { status, text } = await getSseText(buildApp(), VALID_BODY);
 
-    expect(res.status).toBe(500);
-    expect(res.body.error).toBe("Pipeline failed");
+    expect(status).toBe(200);
+    const events = parseSseEvents(text);
+    const errorEvent = events.find(e => e.event === 'error');
+    expect(errorEvent).toBeDefined();
+    expect((errorEvent!.data as any).error).toBe("Pipeline failed");
     // Raw error message must not be leaked
-    expect(res.body.message).toBeUndefined();
+    expect((errorEvent!.data as any).message).toBeUndefined();
   });
 
-  it("returns 502 when runPipeline throws a SyntaxError", async () => {
+  it("streams an error SSE event when runPipeline throws a SyntaxError", async () => {
     mockRunPipeline.mockRejectedValueOnce(new SyntaxError("Unexpected token"));
-    const res = await request(buildApp())
-      .post("/pipeline")
-      .send(VALID_BODY);
+    const { status, text } = await getSseText(buildApp(), VALID_BODY);
 
-    expect(res.status).toBe(502);
-    expect(res.body.error).toBe("Model returned invalid JSON");
+    expect(status).toBe(200);
+    const events = parseSseEvents(text);
+    const errorEvent = events.find(e => e.event === 'error');
+    expect(errorEvent).toBeDefined();
+    expect((errorEvent!.data as any).error).toBe("Model returned invalid JSON");
   });
 
-  it("returns 502 when runPipeline throws a ZodError", async () => {
+  it("streams an error SSE event when runPipeline throws a ZodError", async () => {
     // Produce a real ZodError so instanceof check in the route works correctly
     let zodErr: ZodError;
     try {
@@ -116,11 +166,12 @@ describe("POST /pipeline", () => {
       zodErr = e as ZodError;
     }
     mockRunPipeline.mockRejectedValueOnce(zodErr!);
-    const res = await request(buildApp())
-      .post("/pipeline")
-      .send(VALID_BODY);
+    const { status, text } = await getSseText(buildApp(), VALID_BODY);
 
-    expect(res.status).toBe(502);
-    expect(res.body.error).toBe("Model returned unexpected schema");
+    expect(status).toBe(200);
+    const events = parseSseEvents(text);
+    const errorEvent = events.find(e => e.event === 'error');
+    expect(errorEvent).toBeDefined();
+    expect((errorEvent!.data as any).error).toBe("Model returned unexpected schema");
   });
 });

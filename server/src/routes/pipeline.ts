@@ -13,8 +13,6 @@ const PipelineRequestSchema = z.object({
   history: z.string().max(100_000).optional(),
 });
 
-const SSE_ENABLED = process.env['OPTIMIZATION_SSE'] === 'true';
-
 pipelineRouter.post("/", requireAuth, rateLimiter, async (req, res) => {
   const parsed = PipelineRequestSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -22,50 +20,31 @@ pipelineRouter.post("/", requireAuth, rateLimiter, async (req, res) => {
     return;
   }
 
-  if (SSE_ENABLED) {
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
 
-    let clientDisconnected = false;
-    req.on('close', () => { clientDisconnected = true; });
+  let clientDisconnected = false;
+  res.on('close', () => { clientDisconnected = true; });
 
-    const onStepComplete = (step: AgentResult): void => {
-      if (clientDisconnected) return;
-      res.write(`event: step\ndata: ${JSON.stringify(step)}\n\n`);
-    };
+  const onStepComplete = (step: AgentResult): void => {
+    if (clientDisconnected) return;
+    res.write(`event: step\ndata: ${JSON.stringify(step)}\n\n`);
+  };
 
-    try {
-      const result = await runPipeline(parsed.data, onStepComplete);
-      if (!clientDisconnected) {
-        res.write(`event: done\ndata: ${JSON.stringify({ finalCv: result.finalCv })}\n\n`);
-      }
-    } catch (err) {
-      if (!clientDisconnected) {
-        let message = "Pipeline failed";
-        if (err instanceof SyntaxError) message = "Model returned invalid JSON";
-        else if (err instanceof ZodError) message = "Model returned unexpected schema";
-        res.write(`event: error\ndata: ${JSON.stringify({ error: message })}\n\n`);
-      }
-    } finally {
-      res.end();
-    }
-    return;
-  }
-
-  // Default: standard JSON response
   try {
-    const result = await runPipeline(parsed.data);
-    res.json(result);
+    const result = await runPipeline(parsed.data, onStepComplete);
+    if (!clientDisconnected) {
+      res.write(`event: done\ndata: ${JSON.stringify({ finalCv: result.finalCv })}\n\n`);
+    }
   } catch (err) {
-    if (err instanceof SyntaxError) {
-      res.status(502).json({ error: "Model returned invalid JSON" });
-      return;
+    if (!clientDisconnected) {
+      let message = "Pipeline failed";
+      if (err instanceof SyntaxError) message = "Model returned invalid JSON";
+      else if (err instanceof ZodError) message = "Model returned unexpected schema";
+      res.write(`event: error\ndata: ${JSON.stringify({ error: message })}\n\n`);
     }
-    if (err instanceof ZodError) {
-      res.status(502).json({ error: "Model returned unexpected schema" });
-      return;
-    }
-    res.status(500).json({ error: "Pipeline failed" });
+  } finally {
+    res.end();
   }
 });
