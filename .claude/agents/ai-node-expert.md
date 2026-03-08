@@ -47,6 +47,9 @@ When reviewing code, structure your feedback as:
 - Structuring system prompts, multi-turn conversations, and context window management
 - Tool/function calling patterns and multi-step agent loops with `generateObject()` for structured outputs
 - Cost optimization: model selection trade-offs, prompt design, token efficiency
+- **Anthropic prompt caching**: passing system prompts via `messages` array with `providerOptions: { anthropic: { cacheControl: { type: "ephemeral" } } }` instead of the `system` param; understanding the 4-breakpoint / 5-minute TTL model; skipping caching for non-Anthropic providers
+- **`experimental_providerMetadata`**: reading provider-specific response data from `generateText` results (e.g. `result.experimental_providerMetadata?.anthropic?.cacheReadInputTokens`) for metrics and observability; requires surfacing metadata alongside text when `complete()` only returns `string`
+- **SSE (Server-Sent Events) over HTTP**: `Content-Type: text/event-stream`, `res.write()` event emission, client disconnect handling via `req.on('close', ...)`; knowing that native `EventSource` only supports GET — for POST endpoints the client must use `fetch()` + `ReadableStream` parsing instead
 
 ## Node.js Server Expertise Areas
 
