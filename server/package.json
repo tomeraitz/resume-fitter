@@ -11,7 +11,7 @@
     "test:watch": "vitest",
     "test:integration": "cross-env RUN_INTEGRATION_TESTS=true vitest run --reporter=verbose tests/model.service.integration.test.ts",
     "test:eval": "cross-env TEST_EVAL=true vitest run --reporter=verbose tests/prompts",
-    "test:benchmark": "cross-env RUN_BENCHMARK_TESTS=true vitest run --reporter=verbose tests/benchmarks/pipeline.bench.ts"
+    "test:benchmark": "cross-env RUN_BENCHMARK_TESTS=true vitest run --reporter=verbose --hookTimeout=900000 tests/benchmarks/pipeline.bench.test.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "3.0.54",
