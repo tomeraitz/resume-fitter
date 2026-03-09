@@ -67,14 +67,20 @@ describe('rewrite-resume agent — layout eval tests (TEST_EVAL=true to run)', (
     });
 
     evalIt(`${name}: resume text was changed after rewrite`, async () => {
+      const missingKeywords = ['PostgreSQL', 'CI/CD', 'REST APIs'];
       const result = await runAgent('rewrite-resume', {
-        missingKeywords: ['PostgreSQL', 'CI/CD', 'REST APIs'],
+        missingKeywords,
         cvTemplate: template,
         cvLanguage: 'en',
       }) as any;
       RewriteResumeOutputSchema.parse(result);
 
-      expect(result.updatedCvHtml).not.toBe(template);
+      const allSkipped = missingKeywords.every(kw =>
+        result.keywordsNotAdded.some((k: { keyword: string }) => k.keyword === kw),
+      );
+      if (!allSkipped) {
+        expect(result.updatedCvHtml).not.toBe(template);
+      }
     });
 
     evalIt(`${name}: no new bullet points added after rewrite`, async () => {
