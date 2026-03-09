@@ -11,6 +11,7 @@ const systemPrompt = readFileSync(
 export const AtsScannerOutputSchema = z.object({
   atsScore: z.number(),
   problemAreas: z.array(z.string()),
+  updatedCvHtml: z.string(),
 });
 
 export type AtsScannerOutput = z.infer<typeof AtsScannerOutputSchema>;

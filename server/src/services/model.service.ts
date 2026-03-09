@@ -17,6 +17,14 @@ import type { ProviderConfig } from "../types/model.types.js";
 
 export { ModelConfigError, PipelineError };
 
+// ── Cache metrics shape ─────────────────────────────────────────────────────
+
+export interface CompletionMeta {
+  text: string;
+  cacheCreationTokens?: number;
+  cacheReadTokens?: number;
+}
+
 // ── ModelService ───────────────────────────────────────────────────────────
 
 export class ModelService {
@@ -40,9 +48,18 @@ export class ModelService {
 
   /** Main public API. Returns the model's text response. */
   async complete(systemPrompt: string, userPrompt: string): Promise<string> {
+    const meta = await this.completeWithMeta(systemPrompt, userPrompt);
+    return meta.text;
+  }
+
+  /**
+   * Like `complete()` but also returns Anthropic prompt-caching metrics.
+   * For non-Anthropic providers or when caching is disabled, the token fields are undefined.
+   */
+  async completeWithMeta(systemPrompt: string, userPrompt: string): Promise<CompletionMeta> {
     let primaryError: unknown;
     try {
-      return await this.withRetry(this.primaryConfig, systemPrompt, userPrompt);
+      return await this.withRetryMeta(this.primaryConfig, systemPrompt, userPrompt);
     } catch (err) {
       primaryError = err;
     }
@@ -58,13 +75,13 @@ export class ModelService {
     }
 
     try {
-      const text = await this.attemptCompletion(
+      const meta = await this.attemptCompletionMeta(
         this.fallbackConfig,
         systemPrompt,
         userPrompt,
       );
       this.logFallback(primaryError, this.primaryConfig, this.fallbackConfig);
-      return text;
+      return meta;
     } catch (fallbackError) {
       throw new PipelineError(
         "Both primary and fallback models failed",
@@ -73,29 +90,59 @@ export class ModelService {
     }
   }
 
-  private async attemptCompletion(
+  private async attemptCompletionMeta(
     config: ProviderConfig,
     systemPrompt: string,
     userPrompt: string,
-  ): Promise<string> {
+  ): Promise<CompletionMeta> {
     const model = buildModel(config);
+
+    if (config.provider === 'anthropic') {
+      const result = await generateText({
+        model,
+        messages: [
+          {
+            role: 'user' as const,
+            content: [
+              {
+                type: 'text' as const,
+                text: systemPrompt,
+                providerOptions: {
+                  anthropic: { cacheControl: { type: 'ephemeral' } },
+                },
+              },
+              {
+                type: 'text' as const,
+                text: userPrompt,
+              },
+            ],
+          },
+        ],
+      });
+      return {
+        text: result.text,
+        cacheCreationTokens: result.usage.inputTokenDetails?.cacheWriteTokens ?? undefined,
+        cacheReadTokens: result.usage.inputTokenDetails?.cacheReadTokens ?? undefined,
+      };
+    }
+
     const result = await generateText({
       model,
       system: systemPrompt,
       prompt: userPrompt,
     });
-    return result.text;
+    return { text: result.text };
   }
 
-  private async withRetry(
+  private async withRetryMeta(
     config: ProviderConfig,
     systemPrompt: string,
     userPrompt: string,
-  ): Promise<string> {
+  ): Promise<CompletionMeta> {
     let lastError: unknown;
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       try {
-        return await this.attemptCompletion(config, systemPrompt, userPrompt);
+        return await this.attemptCompletionMeta(config, systemPrompt, userPrompt);
       } catch (err) {
         lastError = err;
         if (err instanceof InvalidPromptError) throw err;

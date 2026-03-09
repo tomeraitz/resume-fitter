@@ -37,7 +37,7 @@ function makeNetworkError(code: "ECONNREFUSED" | "ENOTFOUND" | "ECONNRESET" | "E
 }
 
 function makeGenerateTextResult(text: string) {
-  return { text } as any;
+  return { text, usage: {} } as any;
 }
 
 /**

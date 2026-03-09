@@ -11,13 +11,22 @@ beforeEach(() => {
 
 describe("runAtsScanner", () => {
   it("happy path: returns parsed and validated output", async () => {
-    const payload = { atsScore: 90, problemAreas: [] };
+    const payload = { atsScore: 90, problemAreas: [], updatedCvHtml: "<p>fixed cv</p>" };
     mockComplete.mockResolvedValue(JSON.stringify(payload));
 
     const result = await runAtsScanner(mockService, "<p>cv</p>", "en", "job desc");
 
     expect(result.atsScore).toBe(90);
     expect(result.problemAreas).toEqual([]);
+  });
+
+  it("updatedCvHtml is returned in result", async () => {
+    const payload = { atsScore: 75, problemAreas: ["table layout"], updatedCvHtml: "<p>fixed cv</p>" };
+    mockComplete.mockResolvedValue(JSON.stringify(payload));
+
+    const result = await runAtsScanner(mockService, "<p>cv</p>", "en", "job desc");
+
+    expect(result.updatedCvHtml).toBe("<p>fixed cv</p>");
   });
 
   it("bad JSON: rejects with SyntaxError", async () => {

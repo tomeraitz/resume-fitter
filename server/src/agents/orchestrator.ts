@@ -14,6 +14,7 @@ const modelService = new ModelService();
 
 export async function runPipeline(
   request: PipelineRequest,
+  onStepComplete?: (step: AgentResult) => void,
 ): Promise<PipelineResponse> {
   const steps: AgentResult[] = [];
 
@@ -24,7 +25,9 @@ export async function runPipeline(
     request.cvTemplate,
     request.history,
   );
-  steps.push({ step: 1, name: "hiring-manager", output: hiringManagerResult, durationMs: Date.now() - hiringManagerStart });
+  const hmStep: AgentResult = { step: 1, name: "hiring-manager", output: hiringManagerResult, durationMs: Date.now() - hiringManagerStart };
+  steps.push(hmStep);
+  onStepComplete?.(hmStep);
 
   const rewriteResumeStart = Date.now();
   const rewriteResumeResult = await runRewriteResume(
@@ -33,15 +36,30 @@ export async function runPipeline(
     request.cvTemplate,
     hiringManagerResult.cvLanguage,
   );
-  steps.push({ step: 2, name: "rewrite-resume", output: rewriteResumeResult, durationMs: Date.now() - rewriteResumeStart });
+  const rrStep: AgentResult = { step: 2, name: "rewrite-resume", output: rewriteResumeResult, durationMs: Date.now() - rewriteResumeStart };
+  steps.push(rrStep);
+  onStepComplete?.(rrStep);
 
   const atsScannerStart = Date.now();
-  const atsScannerResult = await runAtsScanner(modelService, rewriteResumeResult.updatedCvHtml, hiringManagerResult.cvLanguage, request.jobDescription);
-  steps.push({ step: 3, name: "ats-scanner", output: atsScannerResult, durationMs: Date.now() - atsScannerStart });
+  const atsScannerResult = await runAtsScanner(
+    modelService,
+    rewriteResumeResult.updatedCvHtml,
+    hiringManagerResult.cvLanguage,
+    request.jobDescription,
+  );
+  const atsStep: AgentResult = { step: 3, name: "ats-scanner", output: atsScannerResult, durationMs: Date.now() - atsScannerStart };
+  steps.push(atsStep);
+  onStepComplete?.(atsStep);
 
   const verifierStart = Date.now();
-  const verifierResult = await runVerifier(modelService, rewriteResumeResult.updatedCvHtml, request.history);
-  steps.push({ step: 4, name: "verifier", output: verifierResult, durationMs: Date.now() - verifierStart });
+  const verifierResult = await runVerifier(
+    modelService,
+    atsScannerResult.updatedCvHtml,
+    request.history,
+  );
+  const verifierStep: AgentResult = { step: 4, name: "verifier", output: verifierResult, durationMs: Date.now() - verifierStart };
+  steps.push(verifierStep);
+  onStepComplete?.(verifierStep);
 
   return { steps, finalCv: verifierResult.verifiedCv };
 }

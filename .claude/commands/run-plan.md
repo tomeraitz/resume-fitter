@@ -16,7 +16,7 @@ Ask the user the following questions (combine into one message):
    - Or describe a custom combination
 3. **Should `test:eval` run after implementation?** (yes / no — note: this runs `npm run test:eval` inside `server/` and takes time; it will run in the foreground so progress is visible)
 
-Send this question to Slack using the `mcp__claude-slack-bridge__ask_on_slack` tool and wait for the user's response before continuing.
+Ask the user these questions directly in the conversation and wait for their response before continuing.
 
 ---
 
@@ -30,7 +30,7 @@ After receiving the user's answers:
 4. Scan any relevant source files mentioned in the plan (server code, extension code, agent prompts, etc.)
 5. Build a clear picture of what needs to be implemented, changed, or fixed
 
-If at any point you have a blocking question that cannot be answered from the docs/code, send it to Slack via `mcp__claude-slack-bridge__ask_on_slack` and wait for the response before proceeding.
+If at any point you have a blocking question that cannot be answered from the docs/code, ask the user directly in the conversation and wait for their response before proceeding.
 
 ---
 
@@ -50,19 +50,6 @@ Mark each task as **in_progress** when you start it and **completed** immediatel
 ---
 
 ## Step 4 — Run Agents (Developer + Validator)
-
-### Attempt A — Agent Team (parallel, background)
-
-Try to launch an agent **team** with two roles:
-
-- **Developer agent**: Uses the agent chosen by the user (e.g. `ai-node-expert` or `wxt-react-expert`). Implements all changes from the plan. Follows the rules in `.claude/docs/node-ai-rules.md` or `.claude/docs/wxt-react-rules.md` as appropriate.
-- **Validator agent**: Uses `general-purpose`. Reviews the developer's output, checks correctness, consistency with the project structure plan, and that no rules are violated.
-
-Run both using the Agent tool. Run them in the **background** (`run_in_background: true`) and wait to be notified when each completes.
-
-### Attempt B — Sequential fallback (if team fails)
-
-If an agent team cannot be launched:
 
 1. Run the **developer** agent in the background — wait for completion notification.
 2. Then run the **validator** agent in the background — wait for completion notification.

@@ -2,6 +2,7 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import { z } from "zod";
 import type { ModelService } from "../services/model.service.js";
+import { stripHtml } from "../utils/html-helpers.js";
 
 const systemPrompt = readFileSync(
   join(import.meta.dirname, "../prompts/hiring-manager.md"),
@@ -23,7 +24,7 @@ export async function runHiringManager(
   cvTemplate: string,
   history?: string,
 ): Promise<HiringManagerOutput> {
-  const userPrompt = JSON.stringify({ jobDescription, cvTemplate, history });
+  const userPrompt = JSON.stringify({ jobDescription, cvTemplate: stripHtml(cvTemplate), history });
   const raw = await modelService.complete(systemPrompt, userPrompt);
   const text = raw
     .replace(/^```(?:json)?\s*/i, "")
