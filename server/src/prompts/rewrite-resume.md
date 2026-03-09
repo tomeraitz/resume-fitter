@@ -35,6 +35,8 @@ Field descriptions:
 ### Never fabricate
 Only incorporate a keyword if the candidate's history already contains experience that legitimately supports it. Do not invent roles, companies, dates, technologies, or metrics that do not appear in the existing CV or the candidate's described background.
 
+Do not invent specific numbers, percentages, or quantified measurements (e.g. "reduced latency by 40%", "99.9% uptime", "500,000 records/batch"). If the CV template already contains a metric, you may preserve or rephrase it. If it does not, describe the achievement in qualitative terms without fabricating quantities.
+
 ### HTML structure must be preserved exactly
 - Do not add, remove, rename, or reorder any HTML tags.
 - Do not add, remove, or change any CSS classes, IDs, inline styles, or HTML attributes.
@@ -52,9 +54,9 @@ When rewriting or enhancing bullet points describing accomplishments, use the Go
 
 **"Accomplished [X], as measured by [Y], by doing [Z]"**
 
-Examples:
-- "Reduced API response time by 40%, as measured by p95 latency metrics, by implementing a caching layer and query optimization"
-- "Increased deployment frequency to daily releases, as measured by CI/CD pipeline metrics, by automating test suites with GitHub Actions"
+Examples (use only metrics that already appear in the CV template — do not invent numbers):
+- "Improved API response time, as measured by p95 latency metrics, by implementing a caching layer and query optimization"
+- "Increased deployment frequency to daily releases, as measured by CI/CD pipeline run counts, by automating test suites with GitHub Actions"
 
 Use this formula for achievement bullets. Descriptive or responsibility bullets (e.g., "Maintained PostgreSQL databases") do not require the X-Y-Z format.
 
@@ -84,7 +86,7 @@ cvTemplate: (HTML with experience at TechCorp using Node.js and databases)
 Output:
 ```json
 {
-  "updatedCvHtml": "<!DOCTYPE html><html lang=\"en\">...<li>Designed and maintained PostgreSQL schemas for multi-tenant SaaS, reducing query latency by 30% through indexing strategy</li>...<li>Improved deployment reliability by building CI/CD pipelines using GitHub Actions, reducing release errors by 80%</li>...<li>Developed RESTful APIs consumed by 3 frontend applications, as measured by API uptime of 99.9%, by implementing rate limiting and caching</li>...</html>",
+  "updatedCvHtml": "<!DOCTYPE html><html lang=\"en\">...<li>Designed and maintained PostgreSQL schemas for multi-tenant SaaS, improving query performance through indexing strategy</li>...<li>Improved deployment reliability by building CI/CD pipelines using GitHub Actions, reducing manual release steps</li>...<li>Developed RESTful APIs consumed by multiple frontend applications, by implementing rate limiting and caching</li>...</html>",
   "keywordsNotAdded": []
 }
 ```
@@ -121,7 +123,7 @@ cvTemplate: (Hebrew HTML CV)
 Output:
 ```json
 {
-  "updatedCvHtml": "<!DOCTYPE html><html lang=\"he\" dir=\"rtl\">...<li>פיתחתי REST APIs לשירותי ה-backend, עם זמן תגובה ממוצע של 120ms תחת עומס שיא</li>...<li>הטמעתי Docker לניהול סביבות פיתוח, מה שהפחית את זמן ה-onboarding של מפתחים חדשים ב-60%</li>...</html>",
+  "updatedCvHtml": "<!DOCTYPE html><html lang=\"he\" dir=\"rtl\">...<li>פיתחתי REST APIs לשירותי ה-backend, תוך הבטחת זמינות גבוהה תחת עומס שיא</li>...<li>הטמעתי Docker לניהול סביבות פיתוח, מה שייעל את תהליך ה-onboarding של מפתחים חדשים</li>...</html>",
   "keywordsNotAdded": []
 }
 ```

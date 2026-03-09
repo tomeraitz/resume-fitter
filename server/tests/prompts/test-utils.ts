@@ -1,10 +1,11 @@
+import { z } from 'zod';
 import { ModelService } from '../../src/services/model.service.js';
 import { runHiringManager } from '../../src/agents/hiring-manager.js';
 import { runRewriteResume } from '../../src/agents/rewrite-resume.js';
 import { runAtsScanner } from '../../src/agents/ats-scanner.js';
 import { runVerifier } from '../../src/agents/verifier.js';
 
-const modelService = new ModelService();
+export const modelService = new ModelService();
 
 type AgentName = 'hiring-manager' | 'rewrite-resume' | 'ats-scanner' | 'verifier';
 
@@ -35,4 +36,18 @@ const agentMap: Record<AgentName, (inputs: Record<string, unknown>) => Promise<u
 
 export async function runAgent(agentName: AgentName, inputs: Record<string, unknown>): Promise<unknown> {
   return agentMap[agentName](inputs);
+}
+
+export async function runJudge<T>(
+  systemPrompt: string,
+  userPrompt: string,
+  schema: z.ZodType<T>,
+): Promise<T> {
+  const raw = await modelService.complete(systemPrompt, userPrompt);
+  const text = raw
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```\s*$/i, '')
+    .trim();
+  const parsed: unknown = JSON.parse(text);
+  return schema.parse(parsed);
 }
