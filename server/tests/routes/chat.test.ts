@@ -23,13 +23,20 @@ vi.mock("../../src/middleware/rateLimit.js", () => ({
   rateLimiter: (_req: express.Request, _res: express.Response, next: express.NextFunction) => next(),
 }));
 
+// Mock chatGuard so tests don't hit the real LLM
+vi.mock("../../src/guards/chatGuard.js", () => ({
+  checkChatGuard: vi.fn(),
+}));
+
 // Import the router AFTER mocks are in place
 import { chatRouter } from "../../src/routes/chat.js";
 import { runCvChat } from "../../src/agents/cv-chat.js";
 import { runVerifier } from "../../src/agents/verifier.js";
+import { checkChatGuard } from "../../src/guards/chatGuard.js";
 
 const mockRunCvChat = vi.mocked(runCvChat);
 const mockRunVerifier = vi.mocked(runVerifier);
+const mockCheckChatGuard = vi.mocked(checkChatGuard);
 
 // Build a minimal app — intentionally does NOT import index.ts
 // because index.ts calls process.exit(1) and app.listen() at module level
@@ -59,6 +66,9 @@ describe("POST /chat", () => {
   beforeEach(() => {
     mockRunCvChat.mockReset();
     mockRunVerifier.mockReset();
+    mockCheckChatGuard.mockReset();
+    // Default: guard allows the message
+    mockCheckChatGuard.mockResolvedValue({ allowed: true, reason: "ok" });
   });
 
   it("returns 200 with updatedCvHtml and flaggedClaims on valid request", async () => {
@@ -215,5 +225,44 @@ describe("POST /chat", () => {
     const res = await request(appWithRealAuth).post("/").send(VALID_BODY);
 
     expect(res.status).toBe(401);
+  });
+
+  // ── Chat guardrail tests ────────────────────────────────────────────────
+
+  it("returns 422 when message is off-topic", async () => {
+    mockCheckChatGuard.mockResolvedValueOnce({ allowed: false, reason: "off topic" });
+
+    const res = await request(buildApp()).post("/").send(VALID_BODY);
+
+    expect(res.status).toBe(422);
+    expect(res.body.error).toBe("Message must be a CV editing request.");
+  });
+
+  it("returns 422 when message is a prompt injection", async () => {
+    mockCheckChatGuard.mockResolvedValueOnce({ allowed: false, reason: "Regex blocked" });
+
+    const res = await request(buildApp()).post("/").send(VALID_BODY);
+
+    expect(res.status).toBe(422);
+    expect(res.body.error).toBe("Message must be a CV editing request.");
+  });
+
+  it("proceeds normally when message is a valid CV edit", async () => {
+    mockCheckChatGuard.mockResolvedValueOnce({ allowed: true, reason: "ok" });
+    mockRunCvChat.mockResolvedValueOnce(CHAT_RESULT);
+    mockRunVerifier.mockResolvedValueOnce(VERIFIER_RESULT);
+
+    const res = await request(buildApp()).post("/").send(VALID_BODY);
+
+    expect(res.status).toBe(200);
+    expect(typeof res.body.updatedCvHtml).toBe("string");
+  });
+
+  it("should not call runCvChat when guardrail blocks", async () => {
+    mockCheckChatGuard.mockResolvedValueOnce({ allowed: false, reason: "off topic" });
+
+    await request(buildApp()).post("/").send(VALID_BODY);
+
+    expect(mockRunCvChat).not.toHaveBeenCalled();
   });
 });

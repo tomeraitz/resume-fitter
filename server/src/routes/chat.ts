@@ -7,6 +7,7 @@ import { ModelService } from "../services/model.service.js";
 import { runCvChat } from "../agents/cv-chat.js";
 import { runVerifier } from "../agents/verifier.js";
 import { ChatRequestSchema, type ChatResponse } from "../types/chat.types.js";
+import { checkChatGuard } from "../guards/chatGuard.js";
 
 export const chatRouter = Router();
 
@@ -21,6 +22,14 @@ chatRouter.post("/", requireAuth, rateLimiter, async (req, res) => {
   }
 
   const { message, currentCv, history } = parsed.data;
+
+  // ── Guardrail ──
+  const guard = await checkChatGuard(message);
+  if (!guard.allowed) {
+    console.warn(`[ChatGuard] blocked: ${guard.reason}`);
+    res.status(422).json({ error: "Message must be a CV editing request." });
+    return;
+  }
 
   try {
     // Step 1: apply user instruction
