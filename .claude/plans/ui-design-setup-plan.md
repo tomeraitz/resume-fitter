@@ -6,17 +6,17 @@
 
 ## Phase 1: Install Pencil.dev Desktop
 
-- [ ] **1.1** Download Pencil desktop for Windows from https://www.pencil.dev/download/Pencil-win-x64.exe
-- [ ] **1.2** Install and launch — authenticate with Claude Code CLI when prompted
-- [ ] **1.3** Open the `resume-fitter` project folder in Pencil
-- [ ] **1.4** Configure Pencil MCP server in `.claude/settings.json` so Claude Code can read/write Pencil designs
-- [ ] **1.5** Confirm MCP connection works — run a quick test prompt asking Claude to read the Pencil canvas
+- [x] **1.1** Download Pencil desktop for Windows from https://www.pencil.dev/download/Pencil-win-x64.exe
+- [x] **1.2** Install and launch — authenticate with Claude Code CLI when prompted
+- [x] **1.3** Open the `resume-fitter` project folder in Pencil
+- [x] **1.4** Configure Pencil MCP server in `.claude/settings.json` so Claude Code can read/write Pencil designs
+- [x] **1.5** Confirm MCP connection works — run a quick test prompt asking Claude to read the Pencil canvas
 
 ## Phase 2: Install frontend-design Skill
 
-- [ ] **2.1** Run `npx skills add anthropics/claude-code -- skill frontend-design` from the project root
-- [ ] **2.2** Verify the skill was added to `.claude/skills/` or `.claude/commands/`
-- [ ] **2.3** Test the skill — ask Claude to generate a simple styled button and confirm output is React + Tailwind
+- [x] **2.1** Run `npx skills add anthropics/claude-code -- skill frontend-design` from the project root
+- [x] **2.2** Verify the skill was added to `.claude/skills/` or `.claude/commands/`
+- [x] **2.3** Test the skill — ask Claude to generate a simple styled button and confirm output is React + Tailwind
 
 ## Phase 3: Define the Design System
 
