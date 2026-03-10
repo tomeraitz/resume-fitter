@@ -20,34 +20,39 @@
 
 ## Phase 3: Define the Design System
 
-- [ ] **3.1** Use the frontend-design skill to define the main design tokens:
-  - **Color palette** — primary, secondary, accent, neutral, error, success (suited for a professional CV tool)
-  - **Typography** — font family (e.g. Inter), font sizes, weights, line heights
-  - **Spacing** — consistent scale (4px base)
-  - **Border radius** — consistent rounding (e.g. rounded-lg)
-  - **Shadows** — elevation levels for popups/overlays
-  - **Component library** — shadcn/ui as the base
-- [ ] **3.2** Save the design system to `extension/tailwind.config.ts` (theme extend) and document it in `.claude/rules/design-system.md` so all future Claude generations follow it
-- [ ] **3.3** Create a `design-tokens.css` or Tailwind CSS layer with CSS custom properties for the tokens
+- [x] **3.1** Use the frontend-design skill to define the main design tokens:
+  - **Color palette** — "Warm Editorial": warm neutrals (cream→charcoal) + amber/gold accent + muted rose errors
+  - **Typography** — Instrument Serif (display) + DM Sans (body), 10px–36px scale
+  - **Spacing** — 4px base grid
+  - **Border radius** — 6px / 10px / 14px / 20px scale
+  - **Shadows** — overlay, card, button, glow levels + glassmorphism
+  - **Animations** — fade-in, slide-up, scale-in, pulse-soft, progress
+- [x] **3.2** Save the design system to `extension/tailwind.config.ts` (theme extend) and document it in `.claude/rules/design-system.md` so all future Claude generations follow it
+- [x] **3.3** Create a `design-tokens.css` or Tailwind CSS layer with CSS custom properties for the tokens → `extension/assets/design-tokens.css`
 
 ## Phase 4: Design Components in Pencil (Design-First)
 
-- [ ] **4.1** Design the **Overlay shell** in Pencil canvas:
-  - Floating panel anchored to bottom-right of the page
-  - Header with extension name + collapse/close buttons
+- [x] **4.1** Design the **Overlay shell** in Pencil canvas:
+  - Floating panel with glassmorphism (cream bg, warm shadow, rounded-lg)
+  - Header: amber logo badge + "Resume Fitter" in Instrument Serif + minimize/close
   - Body area (placeholder for ProgressPanel / CvOutput)
-  - Footer with status text
-  - Apply the design tokens from Phase 3 (colors, typography, spacing, radius)
-- [ ] **4.2** Design the **ProgressPanel** in Pencil:
-  - Step-by-step agent progress display (1/4 → 4/4)
-  - Step labels, status icons, progress indicators
-- [ ] **4.3** Design the **CvOutput** view in Pencil:
-  - Rendered CV preview area
-  - ATS score badge, action buttons (copy, download)
-- [ ] **4.4** Design the **ErrorBanner** in Pencil:
-  - Error state with message and retry button
-- [ ] **4.5** Review and iterate on all designs in Pencil — adjust spacing, colors, layout until satisfied
-- [ ] **4.6** Export / save Pencil designs as reference for development (screenshots or Pencil project files)
+  - Footer: status dot + text + version
+  - All design tokens from Phase 3 applied
+- [x] **4.2** Design the **ProgressPanel** in Pencil:
+  - 4-step vertical stepper with track lines
+  - Complete (green check), Active (amber glow), Pending (gray number) states
+  - Instrument Serif heading "Tailoring your CV" + DM Sans body
+- [x] **4.3** Design the **CvOutput** view in Pencil:
+  - Success banner (green) with check icon
+  - Score badges row: ATS Score, Match %, Flags (pill-shaped)
+  - CV preview card with name, role, experience, fade overlay
+  - Action buttons: Copy HTML (accent) + Download (secondary)
+- [x] **4.4** Design the **ErrorBanner** in Pencil:
+  - Error banner (muted rose) with alert icon, title, description, error code
+  - Dark "Retry pipeline" button
+  - Red status dot in footer
+- [x] **4.5** Review and iterate on all designs in Pencil — all 4 screens aligned, consistent 380px width, labels added
+- [x] **4.6** Designs saved in Pencil project file (pencil-welcome-desktop.pen)
 
 ## Phase 5: Develop Components from Pencil Designs
 
