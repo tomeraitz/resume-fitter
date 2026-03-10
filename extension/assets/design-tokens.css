@@ -1,0 +1,105 @@
+/*
+ * Resume Fitter — Design Tokens
+ * "Warm Editorial" design system
+ *
+ * Import Google Fonts in the Shadow DOM host or overlay entry:
+ *   Instrument Serif (display)  — weights: 400
+ *   DM Sans (body)              — weights: 400, 500, 600, 700
+ *
+ * @see https://fonts.google.com/specimen/Instrument+Serif
+ * @see https://fonts.google.com/specimen/DM+Sans
+ */
+
+:host,
+:root {
+  /* ===================================================
+     SURFACE — warm neutrals from cream to charcoal
+     =================================================== */
+  --rf-surface-50:  #FAF8F5;   /* warm white / cream */
+  --rf-surface-100: #F3F0EB;   /* light cream */
+  --rf-surface-200: #E8E4DD;   /* soft warm gray */
+  --rf-surface-300: #D4CFC6;   /* warm gray */
+  --rf-surface-400: #B5AFA4;   /* mid warm gray */
+  --rf-surface-500: #8E877C;   /* warm gray text */
+  --rf-surface-600: #6B655B;   /* muted charcoal */
+  --rf-surface-700: #4A453D;   /* dark warm brown */
+  --rf-surface-800: #302C26;   /* deep charcoal */
+  --rf-surface-900: #1C1915;   /* near-black warm */
+
+  /* ===================================================
+     ACCENT — warm amber / gold
+     Conveys progress, confidence, premium feel
+     =================================================== */
+  --rf-accent-50:  #FFF8ED;    /* lightest amber tint */
+  --rf-accent-100: #FEECD0;    /* soft gold highlight */
+  --rf-accent-200: #FDD698;    /* warm gold light */
+  --rf-accent-300: #FBB94D;    /* bright amber */
+  --rf-accent-400: #F5A623;    /* vivid gold — primary accent */
+  --rf-accent-500: #E08D0D;    /* rich amber */
+  --rf-accent-600: #C47408;    /* deep gold */
+  --rf-accent-700: #96560A;    /* dark amber */
+
+  /* ===================================================
+     SEMANTIC — success / error / warning
+     =================================================== */
+  --rf-success-50:  #ECFDF3;
+  --rf-success-500: #22C55E;
+  --rf-success-700: #15803D;
+
+  --rf-error-50:  #FEF2F2;
+  --rf-error-500: #DC4A68;     /* muted rose — not harsh red */
+  --rf-error-700: #A63048;
+
+  --rf-warning-50:  #FFFBEB;
+  --rf-warning-500: #F59E0B;
+  --rf-warning-700: #B45309;
+
+  /* ===================================================
+     BORDER RADIUS
+     =================================================== */
+  --rf-radius-sm:  6px;
+  --rf-radius-md:  10px;
+  --rf-radius-lg:  14px;
+  --rf-radius-xl:  20px;
+
+  /* ===================================================
+     SHADOWS — layered for depth
+     =================================================== */
+  --rf-shadow-overlay:
+    0 0 0 1px rgba(0, 0, 0, 0.04),
+    0 8px 40px -8px rgba(28, 25, 21, 0.18),
+    0 2px 8px -2px rgba(28, 25, 21, 0.08);
+
+  --rf-shadow-card:
+    0 0 0 1px rgba(0, 0, 0, 0.03),
+    0 2px 12px -4px rgba(28, 25, 21, 0.10);
+
+  --rf-shadow-button:
+    0 1px 3px rgba(28, 25, 21, 0.08),
+    0 1px 2px rgba(28, 25, 21, 0.06);
+
+  --rf-shadow-glow:
+    0 0 20px rgba(245, 166, 35, 0.15),
+    0 0 40px rgba(245, 166, 35, 0.05);
+
+  /* ===================================================
+     GLASSMORPHISM — overlay backdrop
+     =================================================== */
+  --rf-glass-bg:       rgba(250, 248, 245, 0.82);
+  --rf-glass-border:   rgba(212, 207, 198, 0.45);
+  --rf-glass-blur:     20px;
+
+  /* ===================================================
+     TRANSITIONS
+     =================================================== */
+  --rf-transition-fast:    150ms cubic-bezier(0.16, 1, 0.3, 1);
+  --rf-transition-normal:  250ms cubic-bezier(0.16, 1, 0.3, 1);
+  --rf-transition-slow:    400ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ===================================================
+     Z-INDEX SCALE — for overlay stacking
+     =================================================== */
+  --rf-z-overlay:   2147483640;
+  --rf-z-modal:     2147483645;
+  --rf-z-tooltip:   2147483647;
+}
