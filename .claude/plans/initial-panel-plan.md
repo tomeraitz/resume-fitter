@@ -33,70 +33,79 @@ MainPopup          (header + footer + frame)
 
 ## 3. File Structure
 
-All new files live under `extension/entrypoints/content/main-popup/` following the existing pattern. Shared UI pieces go under `extension/components/`.
+The existing content script entrypoint is `extension/entrypoints/content/overlay/` which already contains hooks (`useUserProfile.ts`, `usePipelineSession.ts`). Rather than creating a parallel `main-popup/` directory, we rename `overlay/` to `main-popup/` to avoid duplicate entrypoints on the same `matches` pattern.
+
+Shared UI pieces go under `extension/components/`. `PopupStatus` type is inlined in `MainPopup.tsx` (too small for its own file). Test files are co-located next to source files.
 
 ```
 extension/
 ├── components/
-│   └── icons/
-│       └── LogoIcon.tsx                 # 3c — CV logo icon (amber square with "CV" text)
+│   ├── icons/
+│   │   └── LogoIcon.tsx                 # CV logo icon (amber square with "CV" text)
+│   └── ErrorBoundary.tsx                # Simple error boundary for overlay crash recovery
 │
 ├── entrypoints/
 │   └── content/
-│       └── main-popup/
-│           ├── App.tsx                  # 3d — root component, owns hooks + state
-│           ├── index.tsx                # 3e — WXT content script entrypoint
+│       └── main-popup/                  # renamed from overlay/
+│           ├── App.tsx                  # root component, owns hooks + state
+│           ├── index.tsx                # WXT content script entrypoint
+│           ├── main-popup.css           # Tailwind directives + design token import
 │           ├── components/
-│           │   ├── MainPopup.tsx     # 3f — reusable shell (header, footer, frame)
-│           │   ├── PopupHeader.tsx    # 3g — header bar (logo, title, close)
-│           │   ├── PopupFooter.tsx    # 3h — footer bar (status dot, version)
-│           │   └── InitialPanel.tsx     # 3i — body content for both states
+│           │   ├── MainPopup.tsx         # reusable shell (header, footer, frame)
+│           │   ├── MainPopup.test.tsx    # 6 tests (co-located)
+│           │   ├── PopupHeader.tsx       # header bar (logo, title, close)
+│           │   ├── PopupFooter.tsx       # footer bar (status dot, version)
+│           │   ├── InitialPanel.tsx      # body content for both states
+│           │   └── InitialPanel.test.tsx # 8 tests (co-located)
 │           └── hooks/
-│               ├── useUserProfile.ts        # (exists)
-│               └── usePipelineSession.ts    # (exists)
-│
-├── types/
-│   └── popup.ts                       # 3j — shared popup types
-│
-└── __tests__/
-    └── main-popup/
-        ├── InitialPanel.test.tsx        # 3k — 8 tests
-        └── MainPopup.test.tsx        # 3l — 6 tests
+│               ├── useUserProfile.ts        # (exists — moved from overlay/)
+│               └── usePipelineSession.ts    # (exists — moved from overlay/)
 ```
 
-**Total new files: 10** (4 components, 1 App root, 1 entrypoint, 1 icon, 1 types, 2 test files).
+**Total new files: 9** (4 components, 1 App root, 1 entrypoint, 1 icon, 1 CSS, 1 error boundary, 2 test files).
 
 ---
 
-## 4. Font Strategy: Google Fonts `<link>` Injection
+## 4. Font Strategy: Bundled WOFF2 Files
 
-**Decision: Load fonts via Google Fonts CDN, injected into `document.head`.**
+**Decision: Bundle WOFF2 font files with `web_accessible_resources` and `@font-face` declarations.**
 
 Key constraint: `@font-face` does NOT work inside Shadow DOM — fonts must be registered in `document.head` regardless of approach. Once registered globally, Shadow DOM elements can reference the `font-family` by name.
 
+### Why bundled instead of CDN
+
+The primary target audience uses job boards (LinkedIn, Greenhouse, Lever) and corporate ATS portals, which often set strict CSP `font-src` directives blocking `fonts.gstatic.com`. Bundling ensures fonts work reliably on these critical sites.
+
 ### Implementation
 
-In `index.tsx`, before mounting the UI, inject a `<link>` into `document.head`:
+1. Download DM Sans (400, 500, 600, 700) and Instrument Serif WOFF2 files into `extension/assets/fonts/`.
+2. Add `web_accessible_resources` in WXT manifest config for the font files.
+3. In `index.tsx`, inject a `<style>` with `@font-face` declarations into `document.head`, using `browser.runtime.getURL()` for font file paths.
+4. **Clean up on context invalidation** — remove the injected `<style>` when the content script is invalidated:
 
 ```ts
-const fontLink = document.createElement('link');
-fontLink.rel = 'stylesheet';
-fontLink.href = 'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif&display=swap';
-document.head.appendChild(fontLink);
+const fontStyle = document.createElement('style');
+fontStyle.textContent = `
+  @font-face {
+    font-family: 'DM Sans';
+    src: url('${browser.runtime.getURL('/assets/fonts/dm-sans-400.woff2')}') format('woff2');
+    font-weight: 400;
+    font-display: swap;
+  }
+  /* ... additional weights and Instrument Serif ... */
+`;
+document.head.appendChild(fontStyle);
+
+ctx.onInvalidated(() => {
+  fontStyle.remove();
+});
 ```
 
 ### Trade-offs accepted
 
-- May not load on sites with strict CSP `font-src` directives blocking `fonts.gstatic.com` (rare, but possible on some corporate sites)
-- Requires internet connectivity for first load (browser caches after)
-- Sends request to Google on pages where extension is active
-
-### Why this approach
-
-- Zero extension size overhead (no bundled WOFF2 files)
-- Simpler implementation — one `<link>` tag, no `@font-face` declarations, no `web_accessible_resources`
-- Google Fonts are heavily cached by browsers — near-instant on repeat visits
-- Can revisit and switch to bundled WOFF2 later if CSP issues arise in practice
+- Adds ~150KB to extension size (WOFF2 is well-compressed)
+- Slightly more implementation work than a CDN `<link>`
+- Works offline and on all sites regardless of CSP
 
 ---
 
@@ -161,7 +170,7 @@ Layout:
   - `incomplete` → orange dot (`bg-warning-500`) + "Profile incomplete"
   - `error` → red dot (`bg-error-500`) + "Error"
 - Right: version string in `text-2xs text-surface-400 font-body`
-- Version from `import.meta.env.VITE_APP_VERSION` (defined in `wxt.config.ts` via Vite's `define`)
+- Version from `browser.runtime.getManifest().version` (idiomatic extension API — WXT derives it from `package.json`)
 - Status text: `aria-live="polite"` for screen reader announcements
 
 ### 5e. `InitialPanel.tsx` (~100 lines)
@@ -226,12 +235,13 @@ interface InitialPanelProps {
 - Disabled: `w-[220px] h-10 rounded flex items-center justify-center gap-2 bg-surface-200 text-surface-400 font-body text-base font-semibold opacity-60 cursor-not-allowed`
 - Text link: `flex items-center gap-1 text-surface-400 font-body text-xs font-medium hover:text-surface-600 transition-colors cursor-pointer`
 
-### 5f. `popup.ts` — Shared Types (~15 lines)
+### 5f. `PopupStatus` type (inlined in `MainPopup.tsx`)
 
 ```ts
 type PopupStatus = 'connected' | 'incomplete' | 'error';
-export type { PopupStatus };
 ```
+
+Inlined in `MainPopup.tsx` rather than a separate file — a single type alias doesn't warrant its own file. Extract to a shared file if more popup types emerge.
 
 ---
 
@@ -299,29 +309,44 @@ function App() {
 }
 ```
 
-### `index.tsx` (~30 lines) — WXT Content Script Entrypoint
+### `index.tsx` (~45 lines) — WXT Content Script Entrypoint
 
 ```ts
 import { createShadowRootUi } from 'wxt/client';
+import './main-popup.css'; // Tailwind directives + design tokens — injected into shadow root by WXT
 
 export default defineContentScript({
   matches: ['*://*/*'],
   cssInjectionMode: 'ui',
 
   async main(ctx) {
-    // Inject Google Fonts <link> into document.head (required — Shadow DOM can't register fonts)
-    const fontLink = document.createElement('link');
-    fontLink.rel = 'stylesheet';
-    fontLink.href = 'https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif&display=swap';
-    document.head.appendChild(fontLink);
+    // Inject @font-face into document.head (required — Shadow DOM can't register fonts)
+    const fontStyle = document.createElement('style');
+    fontStyle.textContent = `
+      @font-face {
+        font-family: 'DM Sans';
+        src: url('${browser.runtime.getURL('/assets/fonts/dm-sans-400.woff2')}') format('woff2');
+        font-weight: 400; font-display: swap;
+      }
+      /* ... additional weights + Instrument Serif */
+    `;
+    document.head.appendChild(fontStyle);
+
+    // Clean up font style on extension reload/update
+    ctx.onInvalidated(() => {
+      fontStyle.remove();
+    });
 
     const ui = await createShadowRootUi(ctx, {
       name: 'resume-fitter-overlay',
       position: 'overlay',
-      alignment: 'bottom-right',
       onMount(container) {
         const root = createRoot(container);
-        root.render(<App />);
+        root.render(
+          <ErrorBoundary>
+            <App />
+          </ErrorBoundary>
+        );
         return root;
       },
       onRemove(root) {
@@ -333,16 +358,32 @@ export default defineContentScript({
 });
 ```
 
+**Notes:**
+- `position: 'overlay'` handles `position: fixed` and high z-index. Bottom-right positioning is done via CSS on the `MainPopup` wrapper (e.g., `fixed bottom-4 right-4`), NOT via `alignment` (which is only valid for `createIntegratedUi`).
+- `./main-popup.css` contains `@tailwind base; @tailwind components; @tailwind utilities;` plus `@import '../../assets/design-tokens.css';`. WXT's `cssInjectionMode: 'ui'` injects CSS imported in the entrypoint into the shadow root.
+- `<ErrorBoundary>` wraps `<App />` to prevent rendering errors from crashing the entire overlay.
+
 ---
 
 ## 8. Close Behavior
 
-**Decision:** Closing hides the popup (not unmount). State is persisted in `browser.storage` so re-opening resumes from the last state. Implementation:
+**Decision:** Closing hides the popup via conditional rendering (`App` returns `null`). The React tree stays mounted but renders nothing, so storage watchers in hooks are paused (no DOM, minimal overhead). Visibility state is stored in `browser.storage.session` so it persists across page navigations within the same browser session.
 
-- `handleClose` sets a `visible: false` flag (could be local React state or stored in `browser.storage.session`)
-- The popup container gets `display: none` or the component conditionally renders `null`
-- Reopening (via toolbar icon click or keyboard shortcut) sets `visible: true`
-- Pipeline state is already persisted in `pipelineSession` storage — nothing to lose on hide
+### Mechanism
+
+- `handleClose` writes `{ visible: false }` to `browser.storage.session` and sets local state to hidden.
+- `App` reads visibility on mount from `browser.storage.session`. If `visible === false`, renders `null`.
+- Pipeline state is already persisted in `pipelineSession` storage — nothing to lose on hide.
+
+### Reopening
+
+- **Toolbar icon click**: Background script listens for `browser.action.onClicked`, sends a message to the content script to toggle visibility.
+- **Keyboard shortcut** (optional, future): Register a command in manifest, background forwards to content script.
+- Content script listens via `browser.runtime.onMessage` for a `toggle-popup` message, flips visibility state.
+
+### Why not `ui.remove()`/`ui.mount()`
+
+Unmounting and remounting the shadow root is heavier than conditional rendering. The shadow root container exists either way — toggling what renders inside it is simpler and preserves any transient React state.
 
 ---
 
@@ -382,13 +423,22 @@ All icons: `size={16}` for buttons, `size={24}` for circle icon area. `strokeWid
 
 ### Two-point CSS injection
 
-1. **Google Fonts `<link>` → `document.head`**: Content script injects a `<link>` element into the page head for DM Sans + Instrument Serif. Fonts registered globally are available inside Shadow DOM.
+1. **`@font-face` `<style>` → `document.head`**: Content script injects a `<style>` element with `@font-face` declarations pointing to bundled WOFF2 files via `browser.runtime.getURL()`. Fonts registered globally are available inside Shadow DOM. Cleaned up via `ctx.onInvalidated()`.
 
-2. **Tailwind + design tokens → shadow root**: WXT's `cssInjectionMode: 'ui'` handles this automatically.
+2. **Tailwind + design tokens → shadow root**: WXT's `cssInjectionMode: 'ui'` injects CSS that is **imported in the entrypoint file** into the shadow root. The entrypoint must import `./main-popup.css` which contains:
+
+```css
+@import '../../../assets/design-tokens.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+```
+
+Without this explicit import, no Tailwind classes will resolve inside the shadow root.
 
 ### Positioning
 
-Use WXT's `position: 'overlay'` in `createShadowRootUi` — it handles `position: fixed` and high z-index automatically. Set `alignment: 'bottom-right'` for bottom-right corner placement.
+Use WXT's `position: 'overlay'` in `createShadowRootUi` — it handles `position: fixed` and high z-index automatically. Bottom-right placement is done via CSS on the `MainPopup` wrapper element (e.g., `fixed bottom-4 right-4`). Note: `alignment` is NOT a valid option for overlay position — it belongs to `createIntegratedUi`.
 
 ---
 
@@ -460,7 +510,7 @@ No mocking needed — pure presentational components.
 - **Extract Job / Edit Profile**: Native `<button>` elements. Disabled button uses HTML `disabled` attribute (not just visual styling)
 - **MainPopup shell**: `role="dialog"` + `aria-label="Resume Fitter"`
 - **Footer status**: `aria-live="polite"` on status text
-- **Focus**: `autoFocus` on primary action button when popup mounts
+- **Focus**: `autoFocus` doesn't work in Shadow DOM — use `useEffect` + `ref.current?.focus()` on the primary action button. Only auto-focus when the user explicitly opens the popup (toolbar click), not on initial content script mount, to avoid stealing focus from host page form fields.
 - **Tab order**: Natural DOM order (close button → body buttons)
 
 ---
@@ -469,41 +519,30 @@ No mocking needed — pure presentational components.
 
 | Step | Files | Depends on |
 |---|---|---|
-| **1** | Install deps: `lucide-react`, `vitest`, `@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event`, `jsdom`. Create `vitest.config.ts` + `test-setup.ts`. | — |
-| **2** | `types/popup.ts` | — |
+| **1** | Rename `overlay/` to `main-popup/`. Install deps: `lucide-react`, `vitest`, `@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event`, `jsdom`. Create `vitest.config.ts` + `test-setup.ts`. | — |
+| **2** | Download WOFF2 font files into `extension/assets/fonts/`. Add `web_accessible_resources` config. | — |
 | **3** | `components/icons/LogoIcon.tsx` | — |
-| **4** | `main-popup/components/PopupFooter.tsx` | Step 2 |
-| **5** | `main-popup/components/PopupHeader.tsx` | Step 3 |
-| **6** | `main-popup/components/MainPopup.tsx` | Steps 4, 5 |
-| **7** | `__tests__/main-popup/MainPopup.test.tsx` | Step 6 |
-| **8** | `main-popup/components/InitialPanel.tsx` | — |
-| **9** | `__tests__/main-popup/InitialPanel.test.tsx` | Step 8 |
-| **10** | `main-popup/App.tsx` | Steps 6, 8 |
-| **11** | `main-popup/index.tsx` (content script entrypoint + Google Fonts `<link>` injection) | Step 10 |
-| **12** | Wire version string: add `define` in `wxt.config.ts` to read from `package.json` | — |
+| **4** | `components/ErrorBoundary.tsx` | — |
+| **5** | `main-popup/main-popup.css` (Tailwind directives + design token import) | — |
+| **6** | `main-popup/components/PopupFooter.tsx` | — |
+| **7** | `main-popup/components/PopupHeader.tsx` | Step 3 |
+| **8** | `main-popup/components/MainPopup.tsx` (`PopupStatus` type inlined here) | Steps 6, 7 |
+| **9** | `main-popup/components/MainPopup.test.tsx` (co-located) | Step 8 |
+| **10** | `main-popup/components/InitialPanel.tsx` | — |
+| **11** | `main-popup/components/InitialPanel.test.tsx` (co-located) | Step 10 |
+| **12** | `main-popup/App.tsx` | Steps 8, 10 |
+| **13** | `main-popup/index.tsx` (entrypoint + font injection + cleanup + ErrorBoundary) | Steps 4, 5, 12 |
 
 ---
 
-## 15. Version String via Vite Define
-
-In `wxt.config.ts`:
-```ts
-import { defineConfig } from 'wxt';
-import pkg from './package.json';
-
-export default defineConfig({
-  vite: () => ({
-    define: {
-      'import.meta.env.VITE_APP_VERSION': JSON.stringify(`v${pkg.version}`),
-    },
-  }),
-});
-```
+## 15. Version String via Extension Manifest API
 
 Usage in `PopupFooter.tsx`:
 ```ts
-const version = import.meta.env.VITE_APP_VERSION ?? 'v0.1.0';
+const version = `v${browser.runtime.getManifest().version}`;
 ```
+
+This is the idiomatic extension approach — WXT derives the manifest version from `package.json` automatically. No `wxt.config.ts` define block needed.
 
 ---
 
@@ -513,13 +552,17 @@ const version = import.meta.env.VITE_APP_VERSION ?? 'v0.1.0';
 |---|---|
 | Max 300 lines per file | Largest file is InitialPanel at ~100 lines |
 | Single responsibility | Each component does one thing |
-| Entrypoints kept thin | `index.tsx` is ~30 lines — delegates to `App.tsx` |
-| Shared UI in `components/` | `LogoIcon` in `components/icons/` |
-| Use `browser.*` not `chrome.*` | `browser.runtime.openOptionsPage()` in App.tsx |
+| Entrypoints kept thin | `index.tsx` is ~45 lines — delegates to `App.tsx` |
+| Shared UI in `components/` | `LogoIcon`, `ErrorBoundary` in `components/` |
+| Shared code rule | Hooks stay in `main-popup/hooks/` (single consumer for now) |
+| Use `browser.*` not `chrome.*` | `browser.runtime.openOptionsPage()`, `browser.runtime.getManifest()` |
 | TypeScript strict mode | All props interfaces explicitly typed, no `any` |
 | No `eval` or `innerHTML` | All rendering via React JSX |
-| No premature abstraction | No shared Button component — inline styles |
+| No premature abstraction | No shared Button component — inline styles. `PopupStatus` inlined. |
 | Small focused hooks | `useUserProfile` only; no new hooks needed |
 | Flat over nested | Component tree is 2 levels deep (Shell > Panel) |
 | Prefer built-ins | `lucide-react` is only new runtime dep |
-| Google Fonts via `<link>` | Simple, zero extension size overhead |
+| Bundled WOFF2 fonts | Reliable on job boards with strict CSP |
+| Content script isolation | Font `<style>` cleaned up via `ctx.onInvalidated()` |
+| Error resilience | `ErrorBoundary` wraps `<App />` in entrypoint |
+| Test co-location | Tests next to source files, not in separate `__tests__/` |
