@@ -24,6 +24,12 @@ export default defineBackground(() => {
     accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS',
   });
 
+  browser.action.onClicked.addListener(async (tab) => {
+    if (tab.id) {
+      await browser.tabs.sendMessage(tab.id, { type: 'toggle-popup' });
+    }
+  });
+
   browser.runtime.onMessage.addListener((message: unknown, sender) => {
     if (sender.id !== browser.runtime.id) return;
 

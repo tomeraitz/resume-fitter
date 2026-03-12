@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { pipelineSession, clearPipelineSession } from '../../../../services/storage';
-import type { PipelineSession } from '../../../../types/pipeline';
+import { pipelineSession, clearPipelineSession } from '../../../services/storage';
+import type { PipelineSession } from '../../../types/pipeline';
 
 export function usePipelineSession() {
   const [session, setSession] = useState<PipelineSession | null>(null);

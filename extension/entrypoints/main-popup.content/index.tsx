@@ -1,6 +1,6 @@
 import ReactDOM from 'react-dom/client';
 import { App } from './App';
-import { ErrorBoundary } from '../../../components/ErrorBoundary';
+import { ErrorBoundary } from '../../components/ErrorBoundary';
 import './main-popup.css';
 
 export default defineContentScript({
@@ -10,6 +10,8 @@ export default defineContentScript({
   async main(ctx) {
     injectFontFaces();
     ctx.onInvalidated(() => removeFontFaces());
+
+    let mounted = false;
 
     const ui = await createShadowRootUi(ctx, {
       name: 'resume-fitter-popup',
@@ -28,7 +30,25 @@ export default defineContentScript({
       },
     });
 
-    ui.mount();
+    function toggle() {
+      if (mounted) {
+        ui.remove();
+        mounted = false;
+      } else {
+        ui.mount();
+        mounted = true;
+      }
+    }
+
+    browser.runtime.onMessage.addListener((message: unknown) => {
+      if (
+        typeof message === 'object' &&
+        message !== null &&
+        (message as Record<string, unknown>).type === 'toggle-popup'
+      ) {
+        toggle();
+      }
+    });
   },
 });
 

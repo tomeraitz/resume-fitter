@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { LogoIcon } from '../../../../components/icons/LogoIcon';
+import { LogoIcon } from '../../../components/icons/LogoIcon';
 
 interface PopupHeaderProps {
   onClose: () => void;

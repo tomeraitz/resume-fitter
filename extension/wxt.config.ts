@@ -3,6 +3,7 @@ import { defineConfig } from 'wxt';
 export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   manifest: {
+    action: {},
     web_accessible_resources: [
       {
         resources: ['assets/fonts/*.woff2'],
