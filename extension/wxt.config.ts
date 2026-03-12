@@ -4,7 +4,7 @@ export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   manifest: {
     action: {},
-    permissions: ['storage'],
+    permissions: ['storage', 'tabs'],
     web_accessible_resources: [
       {
         resources: ['assets/fonts/*.woff2'],

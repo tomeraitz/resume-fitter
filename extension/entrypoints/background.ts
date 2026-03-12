@@ -33,6 +33,15 @@ export default defineBackground(() => {
     }
   });
 
+  browser.tabs.onActivated.addListener(async ({ tabId: _newTabId, previousTabId }) => {
+    if (!previousTabId) return;
+    try {
+      await browser.tabs.sendMessage(previousTabId, { type: 'close-popup' });
+    } catch {
+      // Content script not loaded on previous tab — nothing to close
+    }
+  });
+
   browser.runtime.onMessage.addListener((message: unknown, sender) => {
     if (sender.id !== browser.runtime.id) return;
 
@@ -46,9 +55,18 @@ export default defineBackground(() => {
       return true;
     }
 
-    if (typeof message === 'object' && message !== null && (message as Record<string, unknown>).type === 'open-options-page') {
-      browser.runtime.openOptionsPage();
-      return true;
+    if (typeof message === 'object' && message !== null) {
+      const type = (message as Record<string, unknown>).type;
+
+      if (type === 'open-options-page') {
+        browser.runtime.openOptionsPage();
+        return true;
+      }
+
+      if (type === 'close-popup' && sender.tab?.id) {
+        browser.tabs.sendMessage(sender.tab.id, { type: 'close-popup' });
+        return true;
+      }
     }
   });
 });

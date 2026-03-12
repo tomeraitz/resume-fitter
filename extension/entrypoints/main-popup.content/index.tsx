@@ -42,13 +42,26 @@ export default defineContentScript({
       }
     }
 
+    function close() {
+      if (!browser.runtime?.id) return;
+      if (mounted) {
+        ui.remove();
+        mounted = false;
+      }
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) close();
+    });
+
     browser.runtime.onMessage.addListener((message: unknown) => {
-      if (
-        typeof message === 'object' &&
-        message !== null &&
-        (message as Record<string, unknown>).type === 'toggle-popup'
-      ) {
+      if (typeof message !== 'object' || message === null) return;
+      const type = (message as Record<string, unknown>).type;
+
+      if (type === 'toggle-popup') {
         toggle();
+      } else if (type === 'close-popup') {
+        close();
       }
     });
   },

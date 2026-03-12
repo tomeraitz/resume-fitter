@@ -30,7 +30,7 @@ export function App() {
   };
 
   const handleClose = () => {
-    // TODO: hide overlay UI
+    browser.runtime.sendMessage({ type: 'close-popup' });
   };
 
   return (
