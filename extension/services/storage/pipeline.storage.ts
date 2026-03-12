@@ -1,4 +1,4 @@
-import { storage } from 'wxt/storage';
+import { storage } from 'wxt/utils/storage';
 import type { PipelineSession, StepsRecord } from '../../types/pipeline';
 
 const EMPTY_STEPS: StepsRecord = {
