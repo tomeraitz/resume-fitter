@@ -20,13 +20,16 @@ function isCancelMessage(msg: unknown): boolean {
 }
 
 export default defineBackground(() => {
-  browser.storage.session.setAccessLevel({
-    accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS',
-  });
+  browser.storage.session
+    .setAccessLevel({ accessLevel: 'TRUSTED_AND_UNTRUSTED_CONTEXTS' })
+    .catch((err: unknown) => console.warn('setAccessLevel failed:', err));
 
   browser.action.onClicked.addListener(async (tab) => {
-    if (tab.id) {
+    if (!tab.id) return;
+    try {
       await browser.tabs.sendMessage(tab.id, { type: 'toggle-popup' });
+    } catch {
+      // Content script not loaded on this tab (e.g. chrome:// or new tab page)
     }
   });
 

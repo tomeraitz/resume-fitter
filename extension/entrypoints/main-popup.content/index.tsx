@@ -16,6 +16,7 @@ export default defineContentScript({
     const ui = await createShadowRootUi(ctx, {
       name: 'resume-fitter-popup',
       position: 'overlay',
+      zIndex: 2147483640,
       onMount(container) {
         const root = ReactDOM.createRoot(container);
         root.render(

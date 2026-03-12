@@ -9,25 +9,45 @@ export function usePipelineSession() {
   useEffect(() => {
     let initialized = false;
     let cancelled = false;
+    let unwatchFn: (() => void) | undefined;
 
-    const unwatchPromise = pipelineSession.watch((newVal) => {
-      initialized = true;
-      if (!cancelled) {
-        setSession(newVal);
-        setIsLoading(false);
-      }
-    });
+    async function init() {
+      // Retry loop: session storage may not be accessible until the background
+      // script calls setAccessLevel('TRUSTED_AND_UNTRUSTED_CONTEXTS').
+      const MAX_RETRIES = 5;
+      const RETRY_DELAY = 200;
 
-    pipelineSession.getValue().then((val) => {
-      if (!initialized && !cancelled) {
-        setSession(val);
-        setIsLoading(false);
+      for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+        try {
+          unwatchFn = pipelineSession.watch((newVal) => {
+            initialized = true;
+            if (!cancelled) {
+              setSession(newVal);
+              setIsLoading(false);
+            }
+          });
+
+          const val = await pipelineSession.getValue();
+          if (!initialized && !cancelled) {
+            setSession(val);
+            setIsLoading(false);
+          }
+          return;
+        } catch {
+          if (cancelled) return;
+          await new Promise((r) => setTimeout(r, RETRY_DELAY));
+        }
       }
-    });
+
+      // All retries exhausted — fall back to idle state
+      if (!cancelled) setIsLoading(false);
+    }
+
+    init();
 
     return () => {
       cancelled = true;
-      unwatchPromise.then((unwatch) => unwatch()).catch(() => {});
+      unwatchFn?.();
     };
   }, []);
 
