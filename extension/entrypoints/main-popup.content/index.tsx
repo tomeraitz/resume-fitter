@@ -9,8 +9,6 @@ export default defineContentScript({
 
   async main(ctx) {
     if (!browser.runtime?.id) return;
-    injectFontFaces();
-    ctx.onInvalidated(() => removeFontFaces());
 
     let mounted = false;
 
@@ -19,6 +17,7 @@ export default defineContentScript({
       position: 'overlay',
       zIndex: 2147483640,
       onMount(container) {
+        injectFontFaces(container.getRootNode() as ShadowRoot);
         const root = ReactDOM.createRoot(container);
         root.render(
           <ErrorBoundary>
@@ -55,10 +54,7 @@ export default defineContentScript({
   },
 });
 
-const FONT_STYLE_ID = 'resume-fitter-fonts';
-
-function injectFontFaces() {
-  if (document.getElementById(FONT_STYLE_ID)) return;
+function injectFontFaces(shadowRoot: ShadowRoot) {
   if (!browser.runtime?.id) return;
 
   const dmSansLatin = browser.runtime.getURL('/assets/fonts/dm-sans-latin.woff2');
@@ -67,7 +63,6 @@ function injectFontFaces() {
   const instrumentSerifLatinExt = browser.runtime.getURL('/assets/fonts/instrument-serif-latin-ext.woff2');
 
   const style = document.createElement('style');
-  style.id = FONT_STYLE_ID;
   style.textContent = `
     @font-face {
       font-family: 'DM Sans';
@@ -103,9 +98,5 @@ function injectFontFaces() {
     }
   `;
 
-  document.head.appendChild(style);
-}
-
-function removeFontFaces() {
-  document.getElementById(FONT_STYLE_ID)?.remove();
+  shadowRoot.appendChild(style);
 }
