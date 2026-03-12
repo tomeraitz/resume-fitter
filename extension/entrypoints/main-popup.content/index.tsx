@@ -8,6 +8,7 @@ export default defineContentScript({
   cssInjectionMode: 'ui',
 
   async main(ctx) {
+    if (!browser.runtime?.id) return;
     injectFontFaces();
     ctx.onInvalidated(() => removeFontFaces());
 
@@ -32,6 +33,7 @@ export default defineContentScript({
     });
 
     function toggle() {
+      if (!browser.runtime?.id) return;
       if (mounted) {
         ui.remove();
         mounted = false;
@@ -57,6 +59,7 @@ const FONT_STYLE_ID = 'resume-fitter-fonts';
 
 function injectFontFaces() {
   if (document.getElementById(FONT_STYLE_ID)) return;
+  if (!browser.runtime?.id) return;
 
   const dmSansLatin = browser.runtime.getURL('/assets/fonts/dm-sans-latin.woff2');
   const dmSansLatinExt = browser.runtime.getURL('/assets/fonts/dm-sans-latin-ext.woff2');

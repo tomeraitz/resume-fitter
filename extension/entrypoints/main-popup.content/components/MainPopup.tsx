@@ -15,7 +15,7 @@ export function MainPopup({ status, onClose, children }: MainPopupProps) {
     <div
       role="dialog"
       aria-label="Resume Fitter"
-      className="fixed right-4 z-[2147483640] flex w-[380px] flex-col rounded-lg bg-surface-50 shadow-overlay animate-slide-up font-body"
+      className="fixed right-4 z-[2147483640] flex flex-col rounded-lg bg-surface-50 shadow-overlay animate-slide-up font-body"
     >
       <PopupHeader onClose={onClose} />
       <div className="flex-1">{children}</div>

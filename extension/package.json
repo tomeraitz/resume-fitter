@@ -19,6 +19,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
+    "@thedutchcoder/postcss-rem-to-px": "^0.0.2",
     "@types/react": "19.1.8",
     "@types/react-dom": "19.1.6",
     "@wxt-dev/module-react": "1.1.3",

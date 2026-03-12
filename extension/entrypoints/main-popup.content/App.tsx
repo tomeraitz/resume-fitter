@@ -26,7 +26,7 @@ export function App() {
   };
 
   const handleEditProfile = () => {
-    browser.runtime.openOptionsPage();
+    browser.runtime.sendMessage({ type: 'open-options-page' });
   };
 
   const handleClose = () => {

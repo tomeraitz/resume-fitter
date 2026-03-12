@@ -45,6 +45,11 @@ export default defineBackground(() => {
       clearPipelineSession();
       return true;
     }
+
+    if (typeof message === 'object' && message !== null && (message as Record<string, unknown>).type === 'open-options-page') {
+      browser.runtime.openOptionsPage();
+      return true;
+    }
   });
 });
 

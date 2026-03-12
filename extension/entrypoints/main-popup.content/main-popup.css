@@ -2,3 +2,36 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*
+ * Shadow DOM isolation reset.
+ * WXT's createShadowRootUi creates: <host> → #shadow-root → <html> → <body>
+ * The :host gets `all: initial` from WXT, but the inner <html> and <body>
+ * still inherit certain properties from the host page. We pin the values
+ * that commonly differ between sites without using `all: initial` (which
+ * would wipe Tailwind's --tw-* custom property declarations).
+ */
+html {
+  font-family: 'DM Sans', system-ui, sans-serif !important;
+  font-size: 16px !important;
+  line-height: 1.5 !important;
+  color: var(--rf-surface-800) !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  -webkit-text-size-adjust: 100% !important;
+  text-size-adjust: 100% !important;
+  letter-spacing: normal !important;
+  word-spacing: normal !important;
+  text-transform: none !important;
+  font-weight: 400 !important;
+  font-style: normal !important;
+  direction: ltr !important;
+  text-align: start !important;
+}
+
+body {
+  margin: 0 !important;
+  padding: 0 !important;
+  font: inherit !important;
+  color: inherit !important;
+}
