@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "wxt",
+    "dev:headless": "node -e \"setTimeout(()=>{},2**31-1)\" | wxt",
     "build": "wxt build",
     "zip": "wxt zip",
     "postinstall": "wxt prepare",
