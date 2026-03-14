@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Test-Comp - AI Engineer</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #2d3748;
+      background: #f7f8fc;
+      line-height: 1.6;
+    }
+
+    /* ── Top banner ── */
+    .company-banner {
+      background: #fff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 24px 0;
+      text-align: center;
+    }
+    .company-banner h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #1a202c;
+    }
+    .company-banner p {
+      font-size: 14px;
+      color: #718096;
+      margin-top: 4px;
+    }
+
+    /* ── Main container ── */
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 32px 20px 64px;
+    }
+
+    /* ── Job header ── */
+    .job-header {
+      background: #fff;
+      border-radius: 8px;
+      padding: 32px;
+      margin-bottom: 24px;
+      border: 1px solid #e2e8f0;
+    }
+    .job-header h2 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1a202c;
+      margin-bottom: 12px;
+    }
+    .job-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      font-size: 14px;
+      color: #4a5568;
+    }
+    .job-meta span::before {
+      margin-right: 6px;
+    }
+
+    /* ── Content sections ── */
+    .job-section {
+      background: #fff;
+      border-radius: 8px;
+      padding: 28px 32px;
+      margin-bottom: 20px;
+      border: 1px solid #e2e8f0;
+    }
+    .job-section h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1a202c;
+      margin-bottom: 14px;
+    }
+    .job-section p {
+      margin-bottom: 12px;
+      font-size: 15px;
+    }
+    .job-section ul {
+      padding-left: 20px;
+      margin-bottom: 12px;
+    }
+    .job-section li {
+      margin-bottom: 8px;
+      font-size: 15px;
+    }
+
+    /* ── Application form ── */
+    .apply-section {
+      background: #fff;
+      border-radius: 8px;
+      padding: 32px;
+      border: 1px solid #e2e8f0;
+    }
+    .apply-section h3 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+    .form-group {
+      margin-bottom: 18px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: #2d3748;
+    }
+    .form-group label .required {
+      color: #e53e3e;
+      margin-left: 2px;
+    }
+    .form-group input[type="text"],
+    .form-group input[type="email"],
+    .form-group input[type="tel"],
+    .form-group input[type="url"] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #cbd5e0;
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .form-group input:focus {
+      border-color: #4299e1;
+      box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
+    }
+    .file-upload {
+      border: 2px dashed #cbd5e0;
+      border-radius: 6px;
+      padding: 16px;
+      text-align: center;
+      font-size: 13px;
+      color: #718096;
+      cursor: pointer;
+    }
+    .file-upload:hover {
+      border-color: #4299e1;
+    }
+
+    .btn-apply {
+      display: inline-block;
+      background: #3b82f6;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      padding: 12px 40px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.15s;
+    }
+    .btn-apply:hover {
+      background: #2563eb;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center;
+      padding: 32px 20px;
+      font-size: 12px;
+      color: #a0aec0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="company-banner">
+    <h1>Test-Comp</h1>
+    <p>Cybersecurity &middot; Tel Aviv, Israel</p>
+  </div>
+
+  <div class="container">
+
+    <!-- Job Header -->
+    <div class="job-header">
+      <h2>AI Engineer</h2>
+      <div class="job-meta">
+        <span>Tel Aviv-Yafo, Tel Aviv District, Israel</span>
+        <span>Full-time</span>
+        <span>R&D</span>
+      </div>
+    </div>
+
+    <!-- About -->
+    <div class="job-section">
+      <h3>About Test-Comp</h3>
+      <p>
+        Test-Comp was founded in 2022 and has rapidly established itself in cybersecurity, securing
+        $85M in funding and rallying a dedicated team of 100 professionals. Our mission is to create
+        safer digital environments for small and medium businesses globally through our
+        <strong>Secure &amp; Insure</strong> platform.
+      </p>
+    </div>
+
+    <!-- Role Overview -->
+    <div class="job-section">
+      <h3>The Role</h3>
+      <p>
+        We are looking for an <strong>AI Engineer</strong> to help us build advanced AI solutions
+        using Large Language Models and agentic workflows. You will work on backend infrastructure
+        for generative AI initiatives, bringing strong foundations in machine learning, deep learning,
+        and data analysis.
+      </p>
+    </div>
+
+    <!-- Responsibilities -->
+    <div class="job-section">
+      <h3>Key Responsibilities</h3>
+      <ul>
+        <li>Design and deploy cutting-edge AI solutions into production environments</li>
+        <li>Build, fine-tune, and assess end-to-end AI/ML pipelines for scalable systems</li>
+        <li>Construct agentic systems using modern frameworks like LangGraph and PydanticAI</li>
+        <li>Implement multi-step and multi-agent systems with robust orchestration</li>
+        <li>Research emerging AI advancements and incorporate them into product development</li>
+        <li>Collaborate across R&D teams to integrate AI capabilities with product features</li>
+      </ul>
+    </div>
+
+    <!-- Requirements -->
+    <div class="job-section">
+      <h3>Requirements</h3>
+      <ul>
+        <li>5+ years of professional experience as an ML Engineer, Data Scientist, or Software Engineer with a focus on production deployment</li>
+        <li>1-2 years of hands-on experience with LLMs (GPT, Llama, Gemini, etc.)</li>
+        <li>Proven experience building production-grade LLM applications (RAG systems, AI agents, copilots)</li>
+        <li>Strong Python proficiency at production level</li>
+        <li>Solid background in software engineering, data science, or ML engineering</li>
+        <li>Familiarity with Agent AI architecture, including MCP standards</li>
+        <li>Adaptability, initiative, ownership mentality, and ability to thrive in dynamic environments</li>
+      </ul>
+    </div>
+
+    <!-- Nice to Have -->
+    <div class="job-section">
+      <h3>Nice to Have</h3>
+      <ul>
+        <li>Cybersecurity domain expertise</li>
+        <li>Experience with LLM frameworks and AI orchestration platforms (LangChain, PydanticAI, LangGraph)</li>
+        <li>Observability and monitoring design for LLM agents</li>
+      </ul>
+    </div>
+
+    <!-- Application Form -->
+    <div class="apply-section" id="application">
+      <h3>Apply for this Job</h3>
+      <form id="application-form" onsubmit="return false;">
+        <div class="form-group">
+          <label>First Name <span class="required">*</span></label>
+          <input type="text" name="first_name" required>
+        </div>
+        <div class="form-group">
+          <label>Last Name <span class="required">*</span></label>
+          <input type="text" name="last_name" required>
+        </div>
+        <div class="form-group">
+          <label>Email <span class="required">*</span></label>
+          <input type="email" name="email" required>
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="tel" name="phone">
+        </div>
+        <div class="form-group">
+          <label>Resume/CV <span class="required">*</span></label>
+          <div class="file-upload">
+            <input type="file" name="resume" accept=".pdf,.doc,.docx,.txt,.rtf">
+            <p>PDF, DOC, DOCX, TXT, RTF</p>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Cover Letter</label>
+          <div class="file-upload">
+            <input type="file" name="cover_letter" accept=".pdf,.doc,.docx,.txt,.rtf">
+            <p>PDF, DOC, DOCX, TXT, RTF</p>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>LinkedIn Profile URL</label>
+          <input type="url" name="linkedin" placeholder="https://linkedin.com/in/...">
+        </div>
+        <button type="submit" class="btn-apply">Submit Application</button>
+      </form>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    Powered by Greenhouse &middot; Mock page for E2E testing
+  </div>
+
+</body>
+</html>
