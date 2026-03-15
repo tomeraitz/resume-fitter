@@ -7,16 +7,20 @@ export const ExtractRequestSchema = z.object({
 
 export type ExtractRequest = z.infer<typeof ExtractRequestSchema>;
 
+// Coerce LLM extras values: arrays → comma-joined string, other → string
+const extrasValue = z.union([
+  z.string(),
+  z.array(z.string()).transform(arr => arr.join(", ")),
+]).pipe(z.string());
+
 // ── LLM output schema ──────────────────────────────────────────────────────
 export const ExtractedJobDetailsSchema = z.object({
-  title: z.string().max(300),
-  company: z.string().max(300),
-  location: z.string().max(500),
-  skills: z.array(z.string().max(100)).max(30),
-  description: z.string().max(5000),
-  extras: z.record(z.string().max(100), z.string().max(500))
-    .refine(obj => Object.keys(obj).length <= 20, { message: "Too many extras fields" })
-    .optional(),
+  title: z.string(),
+  company: z.string(),
+  location: z.string(),
+  skills: z.array(z.string()),
+  description: z.string(),
+  extras: z.record(z.string(), extrasValue).optional(),
 });
 
 export type ExtractedJobDetails = z.infer<typeof ExtractedJobDetailsSchema>;
