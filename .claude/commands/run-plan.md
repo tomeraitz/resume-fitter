@@ -34,25 +34,35 @@ Mark each task as **in_progress** when you start it and **completed** immediatel
 
 ---
 
-## Step 3 — Run Agents (Developer + Validator)
+## Step 3 — Run Agents (Task-by-Task: Developer → Validator → Fix Loop)
 
-1. Run the **developer** agent in the background — wait for completion notification.
-2. Then run the **validator** agent in the background — wait for completion notification.
+For **each implementation task** in the todo list, run the following cycle:
+
+1. Run the **developer** agent in the background for this specific task — wait for completion notification.
+2. Run the **validator** agent in the background to review only the work from step 1 — wait for completion notification.
+3. **If the validator finds issues:**
+   - Add each issue as a new task in the TodoWrite task list.
+   - Run the **developer** agent again (same agent type the user chose) to fix the issues — do **NOT** fix issues yourself in the orchestrator context.
+   - Re-run the **validator** agent after fixes.
+   - Repeat until the validator passes with no major issues.
+4. Mark the task as **completed** and move to the next task.
+
+**Important:** Never fix code issues directly in the orchestrator. Always delegate fixes back to the developer agent via Step 3.
 
 ---
 
 ## Step 4 — Security Scan
 
-After all agents have finished:
+After all tasks have been implemented and validated:
 
 1. Launch the **security-scanner** agent (defined in `.claude/agents/security-scanner.md`) using the Agent tool.
-2. Provide it with: the list of files that were created or modified during Step 4.
+2. Provide it with: the list of files that were created or modified during Step 3.
 3. Wait for the scan to complete (run in foreground or background — your choice).
 
 **If issues are found:**
 
 - Add each issue as a new task in the TodoWrite task list.
-- Loop back to **Step 3** to fix the issues (use the same agent selection the user chose).
+- Loop back to **Step 3** to fix the issues — run the **developer** agent (not the orchestrator) to apply fixes.
 - Re-run the security scan after each fix loop until no issues remain.
 
 **If no issues are found:** proceed to Step 5.
@@ -69,7 +79,7 @@ Check if the plan includes E2E tests. If it does:
 **If tests fail:**
 
 - Add each failure as a new task in the TodoWrite task list with the issue details.
-- Loop back to **Step 3** to fix the issues (use the same agent selection the user chose).
+- Loop back to **Step 3** to fix the issues — run the **developer** agent (not the orchestrator) to apply fixes, then re-validate.
 - Re-run from Step 4 after fixes.
 
 **If unable to run the tests** (environment issues, missing dependencies, browser won't launch, etc.):
