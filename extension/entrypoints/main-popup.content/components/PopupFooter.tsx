@@ -1,10 +1,11 @@
 interface PopupFooterProps {
-  status: 'connected' | 'incomplete' | 'error';
+  status: 'connected' | 'incomplete' | 'complete' | 'error';
 }
 
 const STATUS_CONFIG = {
   connected: { color: 'bg-success-500', label: 'Connected' },
   incomplete: { color: 'bg-warning-500', label: 'Profile incomplete' },
+  complete: { color: 'bg-success-500', label: 'Profile complete' },
   error: { color: 'bg-error-500', label: 'Error' },
 } as const;
 
