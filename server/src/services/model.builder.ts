@@ -55,6 +55,6 @@ export function buildModel(config: ProviderConfig): LanguageModel {
   }
 
   // claude-proxy — speaks OpenAI-compatible protocol at /v1/chat/completions
-  const baseURL = process.env["CLAUDE_PROXY_URL"] ?? "http://localhost:8001/v1";
+  const baseURL = process.env["OLLAMA_BASE_URL"] ?? "http://localhost:8001";
   return createOpenAI({ baseURL, apiKey: "dummy" }).chat(modelName);
 }
