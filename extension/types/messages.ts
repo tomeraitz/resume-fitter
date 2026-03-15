@@ -9,6 +9,18 @@ interface CancelPipelineMessage {
   type: 'cancel-pipeline';
 }
 
-type ExtensionMessage = RunPipelineMessage | CancelPipelineMessage;
+interface ExtractJobMessage {
+  type: 'extract-job';
+}
 
-export type { RunPipelineMessage, CancelPipelineMessage, ExtensionMessage };
+type ExtensionMessage =
+  | RunPipelineMessage
+  | CancelPipelineMessage
+  | ExtractJobMessage;
+
+export type {
+  RunPipelineMessage,
+  CancelPipelineMessage,
+  ExtractJobMessage,
+  ExtensionMessage,
+};

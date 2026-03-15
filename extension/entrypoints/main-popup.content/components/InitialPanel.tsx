@@ -3,6 +3,7 @@ import { ScanSearch, CircleUserRound, Sparkles, UserPen } from 'lucide-react';
 interface InitialPanelProps {
   hasProfile: boolean;
   isLoading: boolean;
+  isJobPage: boolean;
   onExtractJob: () => void;
   onEditProfile: () => void;
 }
@@ -10,6 +11,7 @@ interface InitialPanelProps {
 export function InitialPanel({
   hasProfile,
   isLoading,
+  isJobPage,
   onExtractJob,
   onEditProfile,
 }: InitialPanelProps) {
@@ -42,11 +44,21 @@ export function InitialPanel({
         <button
           type="button"
           onClick={onExtractJob}
-          className="flex h-10 w-[220px] items-center justify-center gap-2 rounded bg-accent-400 font-body text-base font-semibold text-white shadow-button transition-colors hover:bg-accent-500 active:bg-accent-600"
+          disabled={!isJobPage}
+          className={`flex h-10 w-[220px] items-center justify-center gap-2 rounded font-body text-base font-semibold transition-colors ${
+            isJobPage
+              ? 'bg-accent-400 text-white shadow-button hover:bg-accent-500 active:bg-accent-600'
+              : 'bg-surface-200 text-surface-400 opacity-50 cursor-not-allowed'
+          }`}
         >
           <Sparkles size={16} strokeWidth={1.5} />
           Extract Job
         </button>
+        {!isJobPage && (
+          <p className="text-xs text-surface-400 text-center">
+            Navigate to a job posting to extract
+          </p>
+        )}
 
         <button
           type="button"

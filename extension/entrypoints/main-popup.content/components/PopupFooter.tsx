@@ -1,5 +1,7 @@
+import type { PopupStatus } from './MainPopup';
+
 interface PopupFooterProps {
-  status: 'connected' | 'incomplete' | 'complete' | 'error';
+  status: PopupStatus;
 }
 
 const STATUS_CONFIG = {
@@ -7,6 +9,8 @@ const STATUS_CONFIG = {
   incomplete: { color: 'bg-warning-500', label: 'Profile incomplete' },
   complete: { color: 'bg-success-500', label: 'Profile complete' },
   error: { color: 'bg-error-500', label: 'Error' },
+  extracting: { color: 'bg-accent-400', label: 'Extracting...' },
+  ready: { color: 'bg-success-500', label: 'Ready to fit' },
 } as const;
 
 export function PopupFooter({ status }: PopupFooterProps) {

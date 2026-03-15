@@ -7,6 +7,7 @@ describe('InitialPanel', () => {
   const defaultProps = {
     hasProfile: false,
     isLoading: false,
+    isJobPage: true,
     onExtractJob: vi.fn(),
     onEditProfile: vi.fn(),
   };

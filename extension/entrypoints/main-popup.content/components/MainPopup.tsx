@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { PopupHeader } from './PopupHeader';
 import { PopupFooter } from './PopupFooter';
 
-export type PopupStatus = 'connected' | 'incomplete' | 'complete' | 'error';
+export type PopupStatus = 'connected' | 'incomplete' | 'complete' | 'error' | 'extracting' | 'ready';
 
 interface MainPopupProps {
   status: PopupStatus;
