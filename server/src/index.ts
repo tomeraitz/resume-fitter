@@ -20,5 +20,5 @@ app.use("/extract", extractRouter);
 
 const port = process.env["PORT"] ?? "3001";
 app.listen(Number(port), () => {
-  console.log(`[server] listening on port ${port}`);
+  console.log(`[server] listening on http://localhost:${port}`);
 });

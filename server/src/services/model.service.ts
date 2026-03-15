@@ -119,11 +119,11 @@ export class ModelService {
           },
         ],
       });
-      return {
-        text: result.text,
-        cacheCreationTokens: result.usage.inputTokenDetails?.cacheWriteTokens ?? undefined,
-        cacheReadTokens: result.usage.inputTokenDetails?.cacheReadTokens ?? undefined,
-      };
+      const meta: CompletionMeta = { text: result.text };
+      const details = result.usage.inputTokenDetails;
+      if (details?.cacheWriteTokens != null) meta.cacheCreationTokens = details.cacheWriteTokens;
+      if (details?.cacheReadTokens != null) meta.cacheReadTokens = details.cacheReadTokens;
+      return meta;
     }
 
     const result = await generateText({

@@ -1,0 +1,13 @@
+services:
+  resume-fitter-server:
+    container_name: resume-fitter-server
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8007:8007"
+    environment:
+      - PORT=8007
+    env_file:
+      - .env
+    restart: unless-stopped
