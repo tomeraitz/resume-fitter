@@ -4,6 +4,7 @@ interface InitialPanelProps {
   hasProfile: boolean;
   isLoading: boolean;
   isJobPage: boolean;
+  extractError: string | null;
   onExtractJob: () => void;
   onEditProfile: () => void;
 }
@@ -12,6 +13,7 @@ export function InitialPanel({
   hasProfile,
   isLoading,
   isJobPage,
+  extractError,
   onExtractJob,
   onEditProfile,
 }: InitialPanelProps) {
@@ -57,6 +59,11 @@ export function InitialPanel({
         {!isJobPage && (
           <p className="text-xs text-surface-400 text-center">
             Navigate to a job posting to extract
+          </p>
+        )}
+        {extractError && (
+          <p className="text-xs text-red-500 text-center">
+            {extractError}
           </p>
         )}
 

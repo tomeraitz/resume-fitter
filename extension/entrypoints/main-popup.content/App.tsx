@@ -96,6 +96,7 @@ export function App() {
           hasProfile={hasProfile}
           isLoading={isLoading}
           isJobPage={isJobPage}
+          extractError={extractError}
           onExtractJob={handleExtractJob}
           onEditProfile={handleEditProfile}
         />
