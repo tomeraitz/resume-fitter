@@ -5,5 +5,7 @@ export const userProfile = storage.defineItem<UserProfile>('local:userProfile', 
   fallback: {
     cvTemplate: '',
     professionalHistory: '',
+    cvFileName: undefined,
+    cvFileSize: undefined,
   },
 });
