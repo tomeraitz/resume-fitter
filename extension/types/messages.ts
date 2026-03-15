@@ -1,3 +1,5 @@
+import type { ExtractedJobDetails } from './extract';
+
 interface RunPipelineMessage {
   type: 'run-pipeline';
   jobDescription: string;
@@ -11,7 +13,12 @@ interface CancelPipelineMessage {
 
 interface ExtractJobMessage {
   type: 'extract-job';
+  html: string;
 }
+
+type ExtractJobResponse =
+  | { success: true; job: ExtractedJobDetails }
+  | { success: false; error: string; notJobPage?: boolean };
 
 type ExtensionMessage =
   | RunPipelineMessage
@@ -22,5 +29,6 @@ export type {
   RunPipelineMessage,
   CancelPipelineMessage,
   ExtractJobMessage,
+  ExtractJobResponse,
   ExtensionMessage,
 };

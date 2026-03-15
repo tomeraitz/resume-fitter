@@ -1,14 +1,17 @@
 import { useState } from 'react';
 
-const JOB_PAGE_PATTERNS = [
-  /linkedin\.com\/jobs\//i,
-  /indeed\.com\/(viewjob|jobs)/i,
-  /glassdoor\.com\/(job-listing|Job)\//i,
-  /greenhouse\.io\/.*\/jobs\//i,
-  /lever\.co\//i,
-  /workday\.com\/.*\/job\//i,
-  /careers\./i,
-  /\/jobs?\//i,
+/** Sites that are obviously not job pages — skip the server call entirely. */
+const NON_JOB_PATTERNS = [
+  /^chrome:\/\//,
+  /^chrome-extension:\/\//,
+  /^about:/,
+  /youtube\.com/i,
+  /google\.com\/search/i,
+  /facebook\.com/i,
+  /twitter\.com|x\.com/i,
+  /instagram\.com/i,
+  /reddit\.com/i,
+  /wikipedia\.org/i,
 ];
 
 interface UseJobPageDetectionReturn {
@@ -16,9 +19,16 @@ interface UseJobPageDetectionReturn {
   isDetecting: boolean;
 }
 
+/**
+ * Lightweight blocklist pre-filter.
+ * Returns `true` for any page not on the blocklist — the server's 422
+ * handles real job-page detection if the content turns out to be irrelevant.
+ */
 export function useJobPageDetection(): UseJobPageDetectionReturn {
-  const [isJobPage] = useState(() =>
-    JOB_PAGE_PATTERNS.some((pattern) => pattern.test(window.location.href))
-  );
+  const [isJobPage] = useState(() => {
+    const url = window.location.href;
+    return !NON_JOB_PATTERNS.some((p) => p.test(url));
+  });
+
   return { isJobPage, isDetecting: false };
 }

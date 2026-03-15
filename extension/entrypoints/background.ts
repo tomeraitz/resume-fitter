@@ -1,5 +1,6 @@
 import { userProfile, pipelineSession, EMPTY_SESSION, clearPipelineSession, setPipelineStatus } from '../services/storage';
 import type { RunPipelineMessage } from '../types/messages';
+import { handleExtractJob, isExtractJobMessage } from '../utils/handleExtractJob';
 
 function isRunPipelineMessage(msg: unknown): msg is RunPipelineMessage {
   if (typeof msg !== 'object' || msg === null) return false;
@@ -33,7 +34,8 @@ export default defineBackground(() => {
     }
   });
 
-  browser.tabs.onActivated.addListener(async ({ tabId: _newTabId, previousTabId }) => {
+  browser.tabs.onActivated.addListener(async ({ tabId: _newTabId, ...rest }) => {
+    const previousTabId = (rest as { previousTabId?: number }).previousTabId;
     if (!previousTabId) return;
     try {
       await browser.tabs.sendMessage(previousTabId, { type: 'close-popup' });
@@ -42,8 +44,13 @@ export default defineBackground(() => {
     }
   });
 
-  browser.runtime.onMessage.addListener((message: unknown, sender) => {
+  browser.runtime.onMessage.addListener((message: unknown, sender, sendResponse) => {
     if (sender.id !== browser.runtime.id) return;
+
+    if (isExtractJobMessage(message)) {
+      handleExtractJob(message.html).then(sendResponse);
+      return true; // Keep message channel open for async response
+    }
 
     if (isRunPipelineMessage(message)) {
       handleRunPipeline(message.jobDescription, message.jobTitle, message.jobCompany);

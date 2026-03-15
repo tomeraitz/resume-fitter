@@ -4,6 +4,7 @@ interface ExtractedJobDetails {
   location: string;
   skills: string[];
   description: string;
+  extras?: Record<string, string>;
 }
 
 function isExtractedJobDetails(data: unknown): data is ExtractedJobDetails {
@@ -20,6 +21,18 @@ function isExtractedJobDetails(data: unknown): data is ExtractedJobDetails {
   if (!Array.isArray(obj.skills) || obj.skills.length > 50) return false;
   if (obj.skills.some((s: unknown) => typeof s !== 'string' || s.length > 100))
     return false;
+
+  // extras is optional — validate bounds when present
+  if (obj.extras !== undefined) {
+    if (typeof obj.extras !== 'object' || obj.extras === null || Array.isArray(obj.extras))
+      return false;
+    const entries = Object.entries(obj.extras as Record<string, unknown>);
+    if (entries.length > 20) return false;
+    for (const [key, val] of entries) {
+      if (key.length > 100) return false;
+      if (typeof val !== 'string' || val.length > 2000) return false;
+    }
+  }
 
   return true;
 }

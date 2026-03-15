@@ -8,6 +8,7 @@ describe('InitialPanel', () => {
     hasProfile: false,
     isLoading: false,
     isJobPage: true,
+    extractError: null as string | null,
     onExtractJob: vi.fn(),
     onEditProfile: vi.fn(),
   };

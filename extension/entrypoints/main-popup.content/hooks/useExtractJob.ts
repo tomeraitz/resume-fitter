@@ -1,7 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { ExtractedJobDetails } from '@/types/extract';
-import { scrapeJobDetails } from '@/utils/scrapeJobDetails';
-import { isExtractedJobDetails } from '@/types/extract';
+import type { ExtractJobResponse } from '@/types/messages';
 
 interface UseExtractJobReturn {
   extractedJob: ExtractedJobDetails | null;
@@ -33,14 +32,24 @@ export function useExtractJob(): UseExtractJobReturn {
 
       if (cancelledRef.current) return;
 
-      const result = scrapeJobDetails(document, window.location.href);
+      // Grab page HTML, strip heavy non-content tags, and truncate
+      let html = document.documentElement.outerHTML;
+      html = html.replace(/<(script|style|svg)\b[^>]*>[\s\S]*?<\/\1>/gi, '');
+      html = html.slice(0, 500_000);
+
+      const response: ExtractJobResponse = await browser.runtime.sendMessage({
+        type: 'extract-job',
+        html,
+      });
 
       if (cancelledRef.current) return;
 
-      if (isExtractedJobDetails(result) && result.title !== '') {
-        setExtractedJob(result);
+      if (response.success) {
+        setExtractedJob(response.job);
+      } else if (response.notJobPage) {
+        setError("This page doesn't appear to be a job posting");
       } else {
-        setError('Could not extract job details from this page');
+        setError(response.error);
       }
     } catch (err) {
       if (!cancelledRef.current) {

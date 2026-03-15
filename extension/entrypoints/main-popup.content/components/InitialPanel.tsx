@@ -58,7 +58,7 @@ export function InitialPanel({
         </button>
         {!isJobPage && (
           <p className="text-xs text-surface-400 text-center">
-            Navigate to a job posting to extract
+            This page can't be scanned
           </p>
         )}
         {extractError && (
