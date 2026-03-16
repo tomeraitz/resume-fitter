@@ -1,3 +1,5 @@
+import type { ExtractedJobDetails } from './extract';
+
 interface RunPipelineMessage {
   type: 'run-pipeline';
   jobDescription: string;
@@ -9,6 +11,24 @@ interface CancelPipelineMessage {
   type: 'cancel-pipeline';
 }
 
-type ExtensionMessage = RunPipelineMessage | CancelPipelineMessage;
+interface ExtractJobMessage {
+  type: 'extract-job';
+  html: string;
+}
 
-export type { RunPipelineMessage, CancelPipelineMessage, ExtensionMessage };
+type ExtractJobResponse =
+  | { success: true; job: ExtractedJobDetails }
+  | { success: false; error: string; notJobPage?: boolean };
+
+type ExtensionMessage =
+  | RunPipelineMessage
+  | CancelPipelineMessage
+  | ExtractJobMessage;
+
+export type {
+  RunPipelineMessage,
+  CancelPipelineMessage,
+  ExtractJobMessage,
+  ExtractJobResponse,
+  ExtensionMessage,
+};

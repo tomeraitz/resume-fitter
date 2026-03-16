@@ -10,7 +10,7 @@ export function useUserProfile() {
     let initialized = false;
     let cancelled = false;
 
-    const unwatchPromise = userProfile.watch((newVal) => {
+    const unwatch = userProfile.watch((newVal) => {
       initialized = true;
       if (!cancelled) {
         setProfile(newVal);
@@ -27,7 +27,7 @@ export function useUserProfile() {
 
     return () => {
       cancelled = true;
-      unwatchPromise.then((unwatch) => unwatch()).catch(() => {});
+      unwatch();
     };
   }, []);
 

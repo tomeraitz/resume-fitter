@@ -11,13 +11,13 @@
 
 ## Project Structure (as of 2026-03)
 - WXT 0.20.7, React 19.1, Tailwind 3.4
-- Content script overlay: `extension/entrypoints/content/overlay/`
-- Hooks: `overlay/hooks/useUserProfile.ts`, `overlay/hooks/usePipelineSession.ts`
+- Content script entrypoint: `extension/entrypoints/main-popup.content/` (renamed from overlay)
+- Hooks: `main-popup.content/hooks/useUserProfile.ts`, `usePipelineSession.ts`
 - Storage: profile (local) + pipeline session (session) via WXT `storage.defineItem`
 - Types: `extension/types/storage.ts`, `pipeline.ts`, `messages.ts`
 - Background SW: `extension/entrypoints/background.ts`
-- No testing setup yet (vitest not installed)
-- No lucide-react installed yet
+- Testing: vitest + @testing-library/react installed, tests co-located
+- lucide-react installed and in use
 
 ## Architecture Decisions
 - Two-layer state: persistent (browser.storage.local) + transient (browser.storage.session)
@@ -27,12 +27,17 @@
 - Design system: "Warm Editorial" — Instrument Serif + DM Sans, amber/gold accent
 - CSS vars prefixed `--rf-` in `:host, :root`
 - Profile complete = cvTemplate AND professionalHistory non-empty
+- AppView state machine in App.tsx: 'initial' | 'profile' | 'extracting' | 'extract-done'
+- PopupStatus: 'connected' | 'incomplete' | 'complete' | 'error' | 'extracting' | 'ready'
 
 ## UI Component Plan
-- OverlayShell (reusable frame) > body panels (InitialPanel, ProgressPanel, etc.)
-- Shell = Header + Footer + children slot
-- No shared Button component yet — per no-premature-abstraction rule
+- MainPopup (reusable shell) > body panels via children slot
+- Existing: InitialPanel, ProfilePanel, PopupHeader, PopupFooter
+- Planned: ExtractLoadingPanel, ExtractFinishedPanel (see extract-loading-finished.md)
+- No shared Button component — per no-premature-abstraction rule
+- Fonts bundled as WOFF2, injected into Shadow DOM root
 
 ## Conventions
-- Plan files: `.claude/plans/*-plan.md` with tables, code blocks, compliance checklists
+- Plan files: `.claude/plans/*.md` with tables, code blocks, compliance checklists
 - Branch naming: kebab-case
+- Design file: `.claude/docs/resume-fitter-ui-design.pen`

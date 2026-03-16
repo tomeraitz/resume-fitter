@@ -21,3 +21,5 @@ export const VerifierOutputSchema = z.object({
   verifiedCv: z.string(),
   flaggedClaims: z.array(z.string()),
 });
+
+export { ExtractionResultSchema } from '../../src/types/extract.types.js';

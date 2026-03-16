@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "test:integration": "cross-env RUN_INTEGRATION_TESTS=true vitest run --reporter=verbose tests/model.service.integration.test.ts",
     "test:eval": "cross-env TEST_EVAL=true vitest run --reporter=verbose tests/prompts",
-    "test:eval:quality": "cross-env TEST_EVAL=true vitest run --reporter=verbose tests/prompts/rewrite-resume.integrity.eval.test.ts tests/eval/chatGuard.eval.test.ts"
+    "test:eval:quality": "cross-env TEST_EVAL=true vitest run --reporter=verbose tests/prompts/rewrite-resume.integrity.eval.test.ts tests/eval/chatGuard.eval.test.ts",
+    "test:eval:extract": "cross-env TEST_EVAL=true vitest run --reporter=verbose tests/prompts/job-extractor.eval.test.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "3.0.54",

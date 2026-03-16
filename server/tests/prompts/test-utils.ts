@@ -4,10 +4,11 @@ import { runHiringManager } from '../../src/agents/hiring-manager.js';
 import { runRewriteResume } from '../../src/agents/rewrite-resume.js';
 import { runAtsScanner } from '../../src/agents/ats-scanner.js';
 import { runVerifier } from '../../src/agents/verifier.js';
+import { runJobExtractor } from '../../src/agents/job-extractor.js';
 
 export const modelService = new ModelService();
 
-type AgentName = 'hiring-manager' | 'rewrite-resume' | 'ats-scanner' | 'verifier';
+type AgentName = 'hiring-manager' | 'rewrite-resume' | 'ats-scanner' | 'verifier' | 'job-extractor';
 
 const agentMap: Record<AgentName, (inputs: Record<string, unknown>) => Promise<unknown>> = {
   'hiring-manager': (inputs) =>
@@ -32,6 +33,8 @@ const agentMap: Record<AgentName, (inputs: Record<string, unknown>) => Promise<u
       inputs['updatedCvHtml'] as string,
       inputs['history'] as string | undefined,
     ),
+  'job-extractor': (inputs) =>
+    runJobExtractor(modelService, inputs['html'] as string),
 };
 
 export async function runAgent(agentName: AgentName, inputs: Record<string, unknown>): Promise<unknown> {

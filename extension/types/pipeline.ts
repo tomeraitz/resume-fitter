@@ -1,3 +1,5 @@
+import type { ExtractedJobDetails } from './extract';
+
 type PipelineStatus = 'idle' | 'running' | 'completed' | 'error';
 
 type AgentStep = 'hiring-manager' | 'rewrite-resume' | 'ats-scanner' | 'verifier';
@@ -25,6 +27,7 @@ interface PipelineSession {
   jobTitle?: string;
   jobCompany?: string;
   steps: StepsRecord;
+  extractedJob?: ExtractedJobDetails;
   generatedCv: string | null;
 }
 

@@ -121,8 +121,12 @@ export class ModelService {
       });
       return {
         text: result.text,
-        cacheCreationTokens: result.usage.inputTokenDetails?.cacheWriteTokens ?? undefined,
-        cacheReadTokens: result.usage.inputTokenDetails?.cacheReadTokens ?? undefined,
+        ...(result.usage.inputTokenDetails?.cacheWriteTokens != null && {
+          cacheCreationTokens: result.usage.inputTokenDetails.cacheWriteTokens,
+        }),
+        ...(result.usage.inputTokenDetails?.cacheReadTokens != null && {
+          cacheReadTokens: result.usage.inputTokenDetails.cacheReadTokens,
+        }),
       };
     }
 
