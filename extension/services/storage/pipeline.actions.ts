@@ -34,6 +34,7 @@ export async function updateStepResult(
 export async function setPipelineStatus(
   status: PipelineSession['status'],
 ): Promise<void> {
+  console.log(`[pipeline] setPipelineStatus → "${status}"`, new Error().stack);
   await mutatePipelineSession((session) => ({
     ...session,
     status,

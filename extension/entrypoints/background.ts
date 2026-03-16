@@ -149,6 +149,7 @@ async function handleRunPipeline(
   jobTitle?: string,
   jobCompany?: string,
 ) {
+  console.log('[pipeline] handleRunPipeline called. Already running?', pipelineRunning);
   if (pipelineRunning) return;
   pipelineRunning = true;
 
@@ -162,8 +163,10 @@ async function handleRunPipeline(
   try {
     const profile = await userProfile.getValue();
 
+    console.log('[pipeline] Profile loaded. cvTemplate length:', profile.cvTemplate?.length, 'history length:', profile.professionalHistory?.length);
     if (!profile.cvTemplate || !profile.professionalHistory) {
-      console.warn('Pipeline started without complete profile.');
+      console.warn('[pipeline] Started without complete profile. cvTemplate:', !!profile.cvTemplate, 'history:', !!profile.professionalHistory);
+      await setPipelineStatus('error');
       return;
     }
 
@@ -179,6 +182,7 @@ async function handleRunPipeline(
       },
     });
 
+    console.log('[pipeline] Fetching:', `${import.meta.env.WXT_SERVER_URL}/pipeline`);
     const response = await fetch(`${import.meta.env.WXT_SERVER_URL}/pipeline`, {
       method: 'POST',
       headers: {
@@ -194,6 +198,8 @@ async function handleRunPipeline(
     });
 
     if (!response.ok || !response.body) {
+      const errBody = await response.text().catch(() => '(unreadable)');
+      console.error('[pipeline] Fetch failed. status:', response.status, 'body:', errBody);
       await setPipelineStatus('error');
       return;
     }
@@ -230,7 +236,7 @@ async function handleRunPipeline(
       console.info('Pipeline stream aborted.');
       return;
     }
-    console.error('Pipeline failed:', err);
+    console.error('[pipeline] Pipeline failed:', err);
     await setPipelineStatus('error');
   } finally {
     currentAbort = null;
