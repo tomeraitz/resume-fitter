@@ -83,4 +83,4 @@ async function handleExtractJob(html: string): Promise<ExtractJobResponse> {
   }
 }
 
-export { handleExtractJob, isExtractJobMessage };
+export { signJwt, handleExtractJob, isExtractJobMessage };

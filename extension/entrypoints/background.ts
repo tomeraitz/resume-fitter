@@ -1,6 +1,7 @@
-import { userProfile, pipelineSession, EMPTY_SESSION, clearPipelineSession, setPipelineStatus } from '../services/storage';
+import { userProfile, pipelineSession, EMPTY_SESSION, clearPipelineSession, setPipelineStatus, updateStepResult, setGeneratedCv } from '../services/storage';
 import type { RunPipelineMessage } from '../types/messages';
-import { handleExtractJob, isExtractJobMessage } from '../utils/handleExtractJob';
+import type { AgentStep, AgentResultData } from '../types/pipeline';
+import { handleExtractJob, isExtractJobMessage, signJwt } from '../utils/handleExtractJob';
 
 function isRunPipelineMessage(msg: unknown): msg is RunPipelineMessage {
   if (typeof msg !== 'object' || msg === null) return false;
@@ -19,6 +20,26 @@ function isCancelMessage(msg: unknown): boolean {
   if (typeof msg !== 'object' || msg === null) return false;
   return (msg as Record<string, unknown>).type === 'cancel-pipeline';
 }
+
+function isValidStepOutput(step: AgentStep, output: unknown): boolean {
+  if (typeof output !== 'object' || output === null) return false;
+  const o = output as Record<string, unknown>;
+  switch (step) {
+    case 'hiring-manager':
+      return typeof o.matchScore === 'number' && Array.isArray(o.missingKeywords);
+    case 'ats-scanner':
+      return typeof o.atsScore === 'number' && Array.isArray(o.problemAreas);
+    case 'verifier':
+      return Array.isArray(o.flaggedClaims);
+    case 'rewrite-resume':
+      return typeof o.updatedCvHtml === 'string';
+    default:
+      return false;
+  }
+}
+
+let currentAbort: AbortController | null = null;
+let pipelineRunning = false;
 
 export default defineBackground(() => {
   browser.storage.session
@@ -54,10 +75,11 @@ export default defineBackground(() => {
 
     if (isRunPipelineMessage(message)) {
       handleRunPipeline(message.jobDescription, message.jobTitle, message.jobCompany);
-      return true;
+      // Fire-and-forget — do not return true
     }
 
     if (isCancelMessage(message)) {
+      currentAbort?.abort();
       clearPipelineSession();
       return true;
     }
@@ -78,11 +100,65 @@ export default defineBackground(() => {
   });
 });
 
+const STEP_NAMES: Record<number, AgentStep> = {
+  1: 'hiring-manager',
+  2: 'rewrite-resume',
+  3: 'ats-scanner',
+  4: 'verifier',
+};
+
+const VALID_SSE_EVENTS = new Set(['step', 'done', 'error']);
+
+async function handleSSEEvent(
+  eventType: string,
+  data: Record<string, unknown>,
+): Promise<void> {
+  if (!VALID_SSE_EVENTS.has(eventType)) return;
+
+  if (eventType === 'step') {
+    const stepNum = data.step;
+    if (typeof stepNum !== 'number' || !Number.isInteger(stepNum) || stepNum < 1 || stepNum > 4) return;
+    const stepName = STEP_NAMES[stepNum];
+    if (!stepName) return;
+
+    const output = (typeof data.output === 'object' && data.output !== null) ? data.output : {};
+    if (!isValidStepOutput(stepName, output)) {
+      console.warn(`Skipping malformed step output for "${stepName}":`, output);
+      return;
+    }
+    await updateStepResult(stepName, 'completed', {
+      step: stepName,
+      ...output,
+    } as AgentResultData);
+
+    const nextStep = STEP_NAMES[stepNum + 1];
+    if (nextStep) {
+      await updateStepResult(nextStep, 'running');
+    }
+  } else if (eventType === 'done') {
+    if (typeof data.finalCv === 'string' && data.finalCv.length <= 2_000_000) {
+      await setGeneratedCv(data.finalCv);
+    }
+  } else if (eventType === 'error') {
+    await setPipelineStatus('error');
+  }
+}
+
 async function handleRunPipeline(
   jobDescription: string,
   jobTitle?: string,
   jobCompany?: string,
 ) {
+  if (pipelineRunning) return;
+  pipelineRunning = true;
+
+  currentAbort?.abort();
+  currentAbort = new AbortController();
+
+  const signal = typeof AbortSignal.any === 'function'
+    ? AbortSignal.any([currentAbort.signal, AbortSignal.timeout(300_000)])
+    : currentAbort.signal;
+
   try {
     const profile = await userProfile.getValue();
 
@@ -97,11 +173,67 @@ async function handleRunPipeline(
       jobDescription,
       jobTitle,
       jobCompany,
+      steps: {
+        ...EMPTY_SESSION.steps,
+        'hiring-manager': { step: 'hiring-manager', status: 'running' },
+      },
     });
 
-    // TODO: POST to backend with profile.cvTemplate + profile.professionalHistory + jobDescription
+    const response = await fetch(`${import.meta.env.WXT_SERVER_URL}/pipeline`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${await signJwt()}`,
+      },
+      body: JSON.stringify({
+        jobDescription,
+        cvTemplate: profile.cvTemplate,
+        history: profile.professionalHistory,
+      }),
+      signal,
+    });
+
+    if (!response.ok || !response.body) {
+      await setPipelineStatus('error');
+      return;
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? '';
+
+      let eventType = '';
+      for (const line of lines) {
+        if (line.startsWith('event: ')) {
+          eventType = line.slice(7).trim();
+        } else if (line.startsWith('data: ') && eventType) {
+          try {
+            const data = JSON.parse(line.slice(6));
+            await handleSSEEvent(eventType, data);
+          } catch (parseErr) {
+            console.warn('Skipping malformed SSE data:', parseErr);
+          }
+          eventType = '';
+        }
+      }
+    }
   } catch (err) {
-    console.error('Pipeline initialization failed:', err);
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      console.info('Pipeline stream aborted.');
+      return;
+    }
+    console.error('Pipeline failed:', err);
     await setPipelineStatus('error');
+  } finally {
+    currentAbort = null;
+    pipelineRunning = false;
   }
 }

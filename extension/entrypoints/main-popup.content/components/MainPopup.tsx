@@ -2,15 +2,16 @@ import type { ReactNode } from 'react';
 import { PopupHeader } from './PopupHeader';
 import { PopupFooter } from './PopupFooter';
 
-export type PopupStatus = 'connected' | 'incomplete' | 'complete' | 'error' | 'extracting' | 'ready';
+export type PopupStatus = 'connected' | 'incomplete' | 'complete' | 'error' | 'extracting' | 'ready' | 'pipeline' | 'pipeline-done';
 
 interface MainPopupProps {
   status: PopupStatus;
+  pipelineStep?: number;
   onClose: () => void;
   children: ReactNode;
 }
 
-export function MainPopup({ status, onClose, children }: MainPopupProps) {
+export function MainPopup({ status, pipelineStep, onClose, children }: MainPopupProps) {
   return (
     <div
       role="dialog"
@@ -19,7 +20,7 @@ export function MainPopup({ status, onClose, children }: MainPopupProps) {
     >
       <PopupHeader onClose={onClose} />
       <div className="flex-1">{children}</div>
-      <PopupFooter status={status} />
+      <PopupFooter status={status} pipelineStep={pipelineStep} />
     </div>
   );
 }
