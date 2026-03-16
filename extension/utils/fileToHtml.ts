@@ -1,8 +1,5 @@
-import * as pdfjsLib from 'pdfjs-dist';
+import { pdfjsLib } from './pdfjs-init';
 import mammoth from 'mammoth';
-
-// Disable worker — main-thread fallback is fine for small resume PDFs (<2MB)
-pdfjsLib.GlobalWorkerOptions.workerSrc = '';
 
 export async function pdfToHtml(buffer: ArrayBuffer): Promise<string> {
   const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buffer) }).promise;

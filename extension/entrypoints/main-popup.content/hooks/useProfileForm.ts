@@ -103,6 +103,7 @@ export function useProfileForm(profile: UserProfile): UseProfileFormReturn {
       const html = ext === '.pdf'
         ? await pdfToHtml(buffer)
         : await docxToHtml(buffer);
+      console.log('[profile] Converted CV to HTML. Length:', html.length, 'Preview:', html.slice(0, 500));
       if (!html.trim()) {
         setError('Could not extract content from file.');
         return;
@@ -111,7 +112,8 @@ export function useProfileForm(profile: UserProfile): UseProfileFormReturn {
       setFileName(file.name);
       setFileSize(file.size);
       setError(null);
-    } catch {
+    } catch (err) {
+      console.error('[profile] File conversion failed:', err);
       setError('Failed to read file.');
     }
   };
