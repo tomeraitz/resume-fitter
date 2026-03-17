@@ -13,6 +13,10 @@ if (!process.env["SESSION_SECRET"]) {
 }
 
 const app = express();
+app.use((req, _res, next) => {
+  console.log(`[server] ${req.method} ${req.url}`);
+  next();
+});
 app.use(express.json({ limit: "512kb" }));
 app.use("/pipeline", pipelineRouter);
 app.use("/chat", chatRouter);

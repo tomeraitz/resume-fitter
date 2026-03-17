@@ -1,4 +1,4 @@
-import { generateText, InvalidPromptError } from "ai";
+import { streamText, InvalidPromptError } from "ai";
 import {
   sleep,
   backoffMs,
@@ -98,7 +98,7 @@ export class ModelService {
     const model = buildModel(config);
 
     if (config.provider === 'anthropic') {
-      const result = await generateText({
+      const result = streamText({
         model,
         messages: [
           {
@@ -119,23 +119,25 @@ export class ModelService {
           },
         ],
       });
+      const text = await result.text;
+      const usage = await result.usage;
       return {
-        text: result.text,
-        ...(result.usage.inputTokenDetails?.cacheWriteTokens != null && {
-          cacheCreationTokens: result.usage.inputTokenDetails.cacheWriteTokens,
+        text,
+        ...(usage.inputTokenDetails?.cacheWriteTokens != null && {
+          cacheCreationTokens: usage.inputTokenDetails.cacheWriteTokens,
         }),
-        ...(result.usage.inputTokenDetails?.cacheReadTokens != null && {
-          cacheReadTokens: result.usage.inputTokenDetails.cacheReadTokens,
+        ...(usage.inputTokenDetails?.cacheReadTokens != null && {
+          cacheReadTokens: usage.inputTokenDetails.cacheReadTokens,
         }),
       };
     }
 
-    const result = await generateText({
+    const result = streamText({
       model,
       system: systemPrompt,
       prompt: userPrompt,
     });
-    return { text: result.text };
+    return { text: await result.text };
   }
 
   private async withRetryMeta(
