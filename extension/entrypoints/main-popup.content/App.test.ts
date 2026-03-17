@@ -70,4 +70,12 @@ describe('derivePopupStatus', () => {
   it('returns "incomplete" when view is "initial" and hasProfile is false', () => {
     expect(derivePopupStatus(false, false, 'initial')).toBe('incomplete');
   });
+
+  it('returns "pipeline" when view is "pipeline"', () => {
+    expect(derivePopupStatus(true, false, 'pipeline')).toBe('pipeline');
+  });
+
+  it('returns "pipeline-done" when view is "pipeline-done"', () => {
+    expect(derivePopupStatus(true, false, 'pipeline-done')).toBe('pipeline-done');
+  });
 });

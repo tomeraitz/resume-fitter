@@ -47,6 +47,25 @@ describe('PopupFooter', () => {
     expect(screen.getByText('Error')).toBeInTheDocument();
   });
 
+  it('renders "Step 2 of 4" with amber dot for pipeline status with pipelineStep=2', () => {
+    const { container } = render(<PopupFooter status="pipeline" pipelineStep={2} />);
+    expect(screen.getByText('Step 2 of 4')).toBeInTheDocument();
+    const dot = container.querySelector('span[aria-hidden="true"]');
+    expect(dot?.className).toContain('bg-accent-400');
+  });
+
+  it('defaults to "Step 1 of 4" when pipeline status has no pipelineStep', () => {
+    render(<PopupFooter status="pipeline" />);
+    expect(screen.getByText('Step 1 of 4')).toBeInTheDocument();
+  });
+
+  it('renders "Complete" with green dot for pipeline-done status', () => {
+    const { container } = render(<PopupFooter status="pipeline-done" />);
+    expect(screen.getByText('Complete')).toBeInTheDocument();
+    const dot = container.querySelector('span[aria-hidden="true"]');
+    expect(dot?.className).toContain('bg-success-500');
+  });
+
   it('displays the extension version from manifest', () => {
     render(<PopupFooter status="connected" />);
     expect(screen.getByText('v0.1.0')).toBeInTheDocument();

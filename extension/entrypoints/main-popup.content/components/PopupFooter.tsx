@@ -2,6 +2,7 @@ import type { PopupStatus } from './MainPopup';
 
 interface PopupFooterProps {
   status: PopupStatus;
+  pipelineStep?: number;
 }
 
 const STATUS_CONFIG = {
@@ -11,10 +12,16 @@ const STATUS_CONFIG = {
   error: { color: 'bg-error-500', label: 'Error' },
   extracting: { color: 'bg-accent-400', label: 'Extracting...' },
   ready: { color: 'bg-success-500', label: 'Ready to fit' },
+  'pipeline-done': { color: 'bg-success-500', label: 'Complete' },
 } as const;
 
-export function PopupFooter({ status }: PopupFooterProps) {
-  const { color, label } = STATUS_CONFIG[status];
+export function PopupFooter({ status, pipelineStep }: PopupFooterProps) {
+  const color = status === 'pipeline'
+    ? 'bg-accent-400'
+    : STATUS_CONFIG[status].color;
+  const label = status === 'pipeline'
+    ? `Step ${pipelineStep ?? 1} of 4`
+    : STATUS_CONFIG[status].label;
   const version = browser.runtime.getManifest().version;
 
   return (

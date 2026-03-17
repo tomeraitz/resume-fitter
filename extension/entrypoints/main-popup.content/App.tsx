@@ -2,14 +2,17 @@ import { useState, useEffect } from 'react';
 import { useUserProfile } from './hooks/useUserProfile';
 import { useExtractJob } from './hooks/useExtractJob';
 import { useJobPageDetection } from './hooks/useJobPageDetection';
+import { usePipeline } from './hooks/usePipeline';
 import { MainPopup } from './components/MainPopup';
 import { InitialPanel } from './components/InitialPanel';
 import { ProfilePanel } from './components/ProfilePanel';
 import { ExtractLoadingPanel } from './components/ExtractLoadingPanel';
 import { ExtractFinishedPanel } from './components/ExtractFinishedPanel';
+import { ProgressPanel } from './components/ProgressPanel';
+import { PipelineCompletePanel } from './components/PipelineCompletePanel';
 import type { PopupStatus } from './components/MainPopup';
 
-export type AppView = 'initial' | 'profile' | 'extracting' | 'extract-done';
+export type AppView = 'initial' | 'profile' | 'extracting' | 'extract-done' | 'pipeline' | 'pipeline-done';
 
 export function derivePopupStatus(
   hasProfile: boolean,
@@ -19,6 +22,8 @@ export function derivePopupStatus(
   if (isLoading) return 'connected';
   if (view === 'extracting') return 'extracting';
   if (view === 'extract-done') return 'ready';
+  if (view === 'pipeline') return 'pipeline';
+  if (view === 'pipeline-done') return 'pipeline-done';
   if (view === 'profile') return hasProfile ? 'complete' : 'incomplete';
   return hasProfile ? 'connected' : 'incomplete';
 }
@@ -35,6 +40,16 @@ export function App() {
     resetExtraction,
   } = useExtractJob();
 
+  const {
+    steps,
+    status: pipelineStatus,
+    currentStepNumber,
+    results: pipelineResults,
+    error: pipelineError,
+    start: startPipeline,
+    cancel: cancelPipeline,
+  } = usePipeline();
+
   const [view, setView] = useState<AppView>('initial');
 
   const hasProfile =
@@ -44,6 +59,7 @@ export function App() {
 
   const popupStatus = derivePopupStatus(hasProfile, isLoading, view);
 
+  // Extraction state transitions
   useEffect(() => {
     if (view === 'extracting' && !isExtracting && extractedJob) {
       setView('extract-done');
@@ -52,6 +68,16 @@ export function App() {
       setView('initial');
     }
   }, [view, isExtracting, extractedJob, extractError]);
+
+  // Pipeline state transitions
+  useEffect(() => {
+    if (view === 'pipeline' && pipelineStatus === 'completed' && pipelineResults) {
+      setView('pipeline-done');
+    }
+    if (view === 'pipeline' && pipelineStatus === 'error') {
+      setView('initial');
+    }
+  }, [view, pipelineStatus, pipelineResults]);
 
   const handleExtractJob = () => {
     if (!isJobPage) return;
@@ -66,13 +92,28 @@ export function App() {
 
   const handleFitCv = () => {
     if (!extractedJob) return;
-    browser.runtime.sendMessage({
-      type: 'run-pipeline',
-      jobDescription: extractedJob.description,
-      jobTitle: extractedJob.title,
-      jobCompany: extractedJob.company,
-    });
-    // TODO: transition to pipeline progress view (future)
+    startPipeline(
+      extractedJob.description,
+      extractedJob.title,
+      extractedJob.company,
+    );
+    setView('pipeline');
+  };
+
+  const handleCancelPipeline = () => {
+    cancelPipeline();
+    setView('initial');
+  };
+
+  const handleReviewCv = () => {
+    if (!pipelineResults?.finalCv) return;
+    const blob = new Blob([pipelineResults.finalCv], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'tailored-cv.html';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
   };
 
   const handleExtractAgain = () => {
@@ -90,7 +131,11 @@ export function App() {
   };
 
   return (
-    <MainPopup status={popupStatus} onClose={handleClose}>
+    <MainPopup
+      status={popupStatus}
+      pipelineStep={view === 'pipeline' ? currentStepNumber : undefined}
+      onClose={handleClose}
+    >
       {view === 'initial' && (
         <InitialPanel
           hasProfile={hasProfile}
@@ -116,6 +161,20 @@ export function App() {
           job={extractedJob}
           onFitCv={handleFitCv}
           onExtractAgain={handleExtractAgain}
+        />
+      )}
+      {view === 'pipeline' && (
+        <ProgressPanel
+          steps={steps}
+          currentStepNumber={currentStepNumber}
+          onCancel={handleCancelPipeline}
+        />
+      )}
+      {view === 'pipeline-done' && pipelineResults && (
+        <PipelineCompletePanel
+          results={pipelineResults}
+          onReviewCv={handleReviewCv}
+          onCancel={handleCancelPipeline}
         />
       )}
     </MainPopup>

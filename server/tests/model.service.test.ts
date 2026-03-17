@@ -13,12 +13,12 @@ import { InvalidPromptError, NoSuchModelError } from "ai";
 
 vi.mock("ai", async (importOriginal) => {
   const actual = await importOriginal<typeof import("ai")>();
-  return { ...actual, generateText: vi.fn() };
+  return { ...actual, streamText: vi.fn() };
 });
 
 // Import after mock so vi.mocked() wraps the mock correctly
-const { generateText } = await import("ai");
-const mockGenerateText = vi.mocked(generateText);
+const { streamText } = await import("ai");
+const mockStreamText = vi.mocked(streamText);
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -36,9 +36,11 @@ function makeNetworkError(code: "ECONNREFUSED" | "ENOTFOUND" | "ECONNRESET" | "E
   return new Error(code);
 }
 
-function makeGenerateTextResult(text: string) {
-  return { text, usage: {} } as any;
+/** Creates a streamText-shaped result (synchronous object with promise properties). */
+function makeStreamTextResult(text: string) {
+  return { text: Promise.resolve(text), usage: Promise.resolve({}) } as any;
 }
+
 
 /**
  * Sets required env vars and constructs a ModelService.
@@ -61,7 +63,7 @@ beforeEach(() => {
   delete process.env["GOOGLE_GENERATIVE_AI_API_KEY"];
   delete process.env["FALLBACK_MODEL_PROVIDER"];
   delete process.env["FALLBACK_MODEL_NAME"];
-  mockGenerateText.mockReset();
+  mockStreamText.mockReset();
 });
 
 afterEach(() => {
@@ -131,10 +133,10 @@ describe("ModelService — constructor", () => {
 
 describe("ModelService.complete() — happy path", () => {
   it("returns text from generateText on first attempt", async () => {
-    mockGenerateText.mockResolvedValueOnce(makeGenerateTextResult("Hello, world!"));
+    mockStreamText.mockReturnValueOnce(makeStreamTextResult("Hello, world!"));
     const svc = makeService();
     await expect(svc.complete("system", "user")).resolves.toBe("Hello, world!");
-    expect(mockGenerateText).toHaveBeenCalledTimes(1);
+    expect(mockStreamText).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -143,72 +145,72 @@ describe("ModelService.complete() — happy path", () => {
 describe("ModelService.complete() — fatal errors (no retry, no fallback)", () => {
   it("rethrows InvalidPromptError immediately without fallback", async () => {
     const err = new InvalidPromptError({ prompt: "bad", message: "invalid" });
-    mockGenerateText.mockRejectedValueOnce(err);
+    mockStreamText.mockImplementationOnce(() => { throw err; });
     const svc = makeService();
     await expect(svc.complete("sys", "usr")).rejects.toThrow(InvalidPromptError);
-    expect(mockGenerateText).toHaveBeenCalledTimes(1);
+    expect(mockStreamText).toHaveBeenCalledTimes(1);
   });
 
   it("rethrows APICallError 401 immediately (no retry)", async () => {
-    mockGenerateText.mockRejectedValueOnce(makeApiError(401));
+    mockStreamText.mockImplementationOnce(() => { throw makeApiError(401); });
     const svc = makeService();
     await expect(svc.complete("sys", "usr")).rejects.toThrow("HTTP 401");
-    expect(mockGenerateText).toHaveBeenCalledTimes(1);
+    expect(mockStreamText).toHaveBeenCalledTimes(1);
   });
 
   it("rethrows APICallError 403 immediately (no retry)", async () => {
-    mockGenerateText.mockRejectedValueOnce(makeApiError(403));
+    mockStreamText.mockImplementationOnce(() => { throw makeApiError(403); });
     const svc = makeService();
     await expect(svc.complete("sys", "usr")).rejects.toThrow("HTTP 403");
-    expect(mockGenerateText).toHaveBeenCalledTimes(1);
+    expect(mockStreamText).toHaveBeenCalledTimes(1);
   });
 
   it("rethrows APICallError 400 immediately (no retry)", async () => {
-    mockGenerateText.mockRejectedValueOnce(makeApiError(400));
+    mockStreamText.mockImplementationOnce(() => { throw makeApiError(400); });
     const svc = makeService();
     await expect(svc.complete("sys", "usr")).rejects.toThrow("HTTP 400");
-    expect(mockGenerateText).toHaveBeenCalledTimes(1);
+    expect(mockStreamText).toHaveBeenCalledTimes(1);
   });
 });
 
 // ── Fatal-for-provider ─────────────────────────────────────────────────────
 
 describe("ModelService.complete() — fatal-for-provider (skip retries, use fallback)", () => {
-  it("NoSuchModelError → falls back after 0 retries, generateText called exactly twice", async () => {
+  it("NoSuchModelError → falls back after 0 retries, streamText called exactly twice", async () => {
     const nsme = new NoSuchModelError({ modelId: "bad-model", modelType: "languageModel" });
-    mockGenerateText
-      .mockRejectedValueOnce(nsme)
-      .mockResolvedValueOnce(makeGenerateTextResult("fallback ok"));
+    mockStreamText
+      .mockImplementationOnce(() => { throw nsme; })
+      .mockReturnValueOnce(makeStreamTextResult("fallback ok"));
     const svc = makeService({
       FALLBACK_MODEL_PROVIDER: "openai",
       OPENAI_API_KEY: "sk-test",
     });
     await expect(svc.complete("sys", "usr")).resolves.toBe("fallback ok");
-    expect(mockGenerateText).toHaveBeenCalledTimes(2);
+    expect(mockStreamText).toHaveBeenCalledTimes(2);
   });
 
-  it("ECONNREFUSED → falls back after 0 retries, generateText called exactly twice", async () => {
-    mockGenerateText
-      .mockRejectedValueOnce(makeNetworkError("ECONNREFUSED"))
-      .mockResolvedValueOnce(makeGenerateTextResult("fallback ok"));
+  it("ECONNREFUSED → falls back after 0 retries, streamText called exactly twice", async () => {
+    mockStreamText
+      .mockImplementationOnce(() => { throw makeNetworkError("ECONNREFUSED"); })
+      .mockReturnValueOnce(makeStreamTextResult("fallback ok"));
     const svc = makeService({
       FALLBACK_MODEL_PROVIDER: "openai",
       OPENAI_API_KEY: "sk-test",
     });
     await expect(svc.complete("sys", "usr")).resolves.toBe("fallback ok");
-    expect(mockGenerateText).toHaveBeenCalledTimes(2);
+    expect(mockStreamText).toHaveBeenCalledTimes(2);
   });
 
-  it("ENOTFOUND → falls back after 0 retries, generateText called exactly twice", async () => {
-    mockGenerateText
-      .mockRejectedValueOnce(makeNetworkError("ENOTFOUND"))
-      .mockResolvedValueOnce(makeGenerateTextResult("fallback ok"));
+  it("ENOTFOUND → falls back after 0 retries, streamText called exactly twice", async () => {
+    mockStreamText
+      .mockImplementationOnce(() => { throw makeNetworkError("ENOTFOUND"); })
+      .mockReturnValueOnce(makeStreamTextResult("fallback ok"));
     const svc = makeService({
       FALLBACK_MODEL_PROVIDER: "openai",
       OPENAI_API_KEY: "sk-test",
     });
     await expect(svc.complete("sys", "usr")).resolves.toBe("fallback ok");
-    expect(mockGenerateText).toHaveBeenCalledTimes(2);
+    expect(mockStreamText).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -217,25 +219,25 @@ describe("ModelService.complete() — fatal-for-provider (skip retries, use fall
 describe("ModelService.complete() — retriable errors", () => {
   it("APICallError 429 → retries 2x with backoff, succeeds on 3rd primary attempt", async () => {
     vi.useFakeTimers();
-    mockGenerateText
-      .mockRejectedValueOnce(makeApiError(429))
-      .mockRejectedValueOnce(makeApiError(429))
-      .mockResolvedValueOnce(makeGenerateTextResult("ok after retries"));
+    mockStreamText
+      .mockImplementationOnce(() => { throw makeApiError(429); })
+      .mockImplementationOnce(() => { throw makeApiError(429); })
+      .mockReturnValueOnce(makeStreamTextResult("ok after retries"));
 
     const svc = makeService();
     const promise = svc.complete("sys", "usr");
     await vi.runAllTimersAsync();
     await expect(promise).resolves.toBe("ok after retries");
-    expect(mockGenerateText).toHaveBeenCalledTimes(3);
+    expect(mockStreamText).toHaveBeenCalledTimes(3);
   });
 
   it("APICallError 500 → retries 2x with backoff, then falls to fallback (4 total calls)", async () => {
     vi.useFakeTimers();
-    mockGenerateText
-      .mockRejectedValueOnce(makeApiError(500))
-      .mockRejectedValueOnce(makeApiError(500))
-      .mockRejectedValueOnce(makeApiError(500))
-      .mockResolvedValueOnce(makeGenerateTextResult("fallback result"));
+    mockStreamText
+      .mockImplementationOnce(() => { throw makeApiError(500); })
+      .mockImplementationOnce(() => { throw makeApiError(500); })
+      .mockImplementationOnce(() => { throw makeApiError(500); })
+      .mockReturnValueOnce(makeStreamTextResult("fallback result"));
 
     const svc = makeService({
       FALLBACK_MODEL_PROVIDER: "openai",
@@ -244,17 +246,17 @@ describe("ModelService.complete() — retriable errors", () => {
     const promise = svc.complete("sys", "usr");
     await vi.runAllTimersAsync();
     await expect(promise).resolves.toBe("fallback result");
-    expect(mockGenerateText).toHaveBeenCalledTimes(4);
+    expect(mockStreamText).toHaveBeenCalledTimes(4);
   });
 
   it("fallback success → returns text and logs console.warn", async () => {
     vi.useFakeTimers();
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    mockGenerateText
-      .mockRejectedValueOnce(makeApiError(429))
-      .mockRejectedValueOnce(makeApiError(429))
-      .mockRejectedValueOnce(makeApiError(429))
-      .mockResolvedValueOnce(makeGenerateTextResult("from fallback"));
+    mockStreamText
+      .mockImplementationOnce(() => { throw makeApiError(429); })
+      .mockImplementationOnce(() => { throw makeApiError(429); })
+      .mockImplementationOnce(() => { throw makeApiError(429); })
+      .mockReturnValueOnce(makeStreamTextResult("from fallback"));
 
     const svc = makeService({
       FALLBACK_MODEL_PROVIDER: "openai",
@@ -273,11 +275,12 @@ describe("ModelService.complete() — retriable errors", () => {
 describe("ModelService.complete() — fallback exhaustion", () => {
   it("primary fails + fallback fails → throws PipelineError", async () => {
     vi.useFakeTimers();
-    mockGenerateText
-      .mockRejectedValueOnce(makeApiError(429))
-      .mockRejectedValueOnce(makeApiError(429))
-      .mockRejectedValueOnce(makeApiError(429))
-      .mockRejectedValueOnce(new Error("fallback also failed"));
+    const fallbackErr = new Error("fallback also failed");
+    mockStreamText
+      .mockImplementationOnce(() => { throw makeApiError(429); })
+      .mockImplementationOnce(() => { throw makeApiError(429); })
+      .mockImplementationOnce(() => { throw makeApiError(429); })
+      .mockImplementationOnce(() => { throw fallbackErr; });
 
     const svc = makeService({
       FALLBACK_MODEL_PROVIDER: "openai",
@@ -291,7 +294,7 @@ describe("ModelService.complete() — fallback exhaustion", () => {
 
   it("primary fails + no fallback configured → throws PipelineError", async () => {
     vi.useFakeTimers();
-    mockGenerateText.mockRejectedValue(makeApiError(429));
+    mockStreamText.mockImplementation(() => { throw makeApiError(429); });
 
     // ollama has no same-provider fallback and no cross-provider fallback set
     process.env["MODEL_PROVIDER"] = "ollama";
@@ -305,16 +308,13 @@ describe("ModelService.complete() — fallback exhaustion", () => {
   it("PipelineError.cause contains the original error", async () => {
     vi.useFakeTimers();
     const rootCause = new Error("fallback also bombed");
-    mockGenerateText
-      .mockRejectedValue(makeApiError(429)) // primary always fails
-      .mockRejectedValueOnce(rootCause); // but only 3 primary rejections registered above
 
-    // Easier: use a fatal-for-provider error so we skip straight to fallback
+    // Use a fatal-for-provider error so we skip straight to fallback
     const nsme = new NoSuchModelError({ modelId: "x", modelType: "languageModel" });
-    mockGenerateText.mockReset();
-    mockGenerateText
-      .mockRejectedValueOnce(nsme)
-      .mockRejectedValueOnce(rootCause);
+    mockStreamText.mockReset();
+    mockStreamText
+      .mockImplementationOnce(() => { throw nsme; })
+      .mockImplementationOnce(() => { throw rootCause; });
 
     const svc = makeService({
       FALLBACK_MODEL_PROVIDER: "openai",

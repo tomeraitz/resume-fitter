@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { userProfile } from '../../../services/storage';
 import type { UserProfile } from '../../../types/storage';
+import { pdfToHtml, docxToHtml } from '../../../utils/fileToHtml';
 
 const ACCEPTED_TYPES = new Map([
   ['.pdf', 'application/pdf'],
@@ -99,12 +100,20 @@ export function useProfileForm(profile: UserProfile): UseProfileFormReturn {
         setError('File appears to be corrupted or is not a valid PDF/DOCX.');
         return;
       }
-      const dataUrl = await readFileAs(file, 'dataurl');
-      setCvContent(dataUrl);
+      const html = ext === '.pdf'
+        ? await pdfToHtml(buffer)
+        : await docxToHtml(buffer);
+      console.log('[profile] Converted CV to HTML. Length:', html.length, 'Preview:', html.slice(0, 500));
+      if (!html.trim()) {
+        setError('Could not extract content from file.');
+        return;
+      }
+      setCvContent(html);
       setFileName(file.name);
       setFileSize(file.size);
       setError(null);
-    } catch {
+    } catch (err) {
+      console.error('[profile] File conversion failed:', err);
       setError('Failed to read file.');
     }
   };

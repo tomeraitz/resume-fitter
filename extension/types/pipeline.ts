@@ -7,10 +7,10 @@ type AgentStep = 'hiring-manager' | 'rewrite-resume' | 'ats-scanner' | 'verifier
 type StepStatus = 'pending' | 'running' | 'completed' | 'error';
 
 type AgentResultData =
-  | { step: 'hiring-manager'; matchScore: number; keywords: string[] }
-  | { step: 'rewrite-resume'; rewrittenCv: string }
-  | { step: 'ats-scanner'; atsScore: number; issues: string[] }
-  | { step: 'verifier'; flaggedClaims: string[]; verified: boolean };
+  | { step: 'hiring-manager'; matchScore: number; missingKeywords: string[]; summary: string; cvLanguage: string }
+  | { step: 'rewrite-resume'; updatedCvHtml: string; keywordsNotAdded: { keyword: string; reason: string }[] }
+  | { step: 'ats-scanner'; atsScore: number; problemAreas: string[]; updatedCvHtml: string }
+  | { step: 'verifier'; verifiedCv: string; flaggedClaims: string[] };
 
 interface AgentResult {
   step: AgentStep;
@@ -31,6 +31,13 @@ interface PipelineSession {
   generatedCv: string | null;
 }
 
+interface PipelineResults {
+  atsScore: number;
+  matchScore: number;
+  flaggedClaims: string[];
+  finalCv: string;
+}
+
 export type {
   PipelineStatus,
   AgentStep,
@@ -39,4 +46,5 @@ export type {
   AgentResult,
   StepsRecord,
   PipelineSession,
+  PipelineResults,
 };

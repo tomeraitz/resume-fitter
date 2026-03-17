@@ -71,10 +71,11 @@ After all tasks have been implemented and validated:
 
 ## Step 5 — E2E Tests (if applicable)
 
-Check if the plan includes E2E tests. If it does:
+Check if E2E tests exist in `e2e/tests/`. If they do:
 
-1. Run the `debug-extension` skill in the background to launch the extension and execute E2E tests.
-2. Wait for the background task to complete.
+1. Run the `debug-extension` skill in the background to launch the extension.
+2. Execute **all** test files in `e2e/tests/` in order.
+3. Wait for all tests to complete.
 
 **If tests fail:**
 
