@@ -29,6 +29,7 @@ export interface CompletionMeta {
 
 export class ModelService {
   private readonly primaryConfig: ProviderConfig;
+  private readonly fastConfig: ProviderConfig | null;
   private readonly fallbackConfig: ProviderConfig | null;
 
   constructor() {
@@ -43,6 +44,20 @@ export class ModelService {
     // Validate primary API key at construction time — fail fast at startup
     buildModel(this.primaryConfig);
 
+    // Fast/cheap model for lightweight steps — can use a different provider
+    const rawFastProvider = process.env["FAST_MODEL_PROVIDER"];
+    const fastModelName = process.env["FAST_MODEL_NAME"];
+    if (fastModelName) {
+      const fastProvider = rawFastProvider
+        ? parseSupportedProvider(rawFastProvider, "FAST_MODEL_PROVIDER")
+        : provider;
+      this.fastConfig = { provider: fastProvider, modelName: fastModelName };
+      buildModel(this.fastConfig); // validate API key at startup
+      console.log(`[ModelService] fast model: ${fastProvider}/${fastModelName}`);
+    } else {
+      this.fastConfig = null;
+    }
+
     this.fallbackConfig = this.resolveFallbackConfig();
   }
 
@@ -52,14 +67,22 @@ export class ModelService {
     return meta.text;
   }
 
+  /** Like `complete()` but uses FAST_MODEL_NAME. Falls back to primary if not configured. */
+  async completeFast(systemPrompt: string, userPrompt: string): Promise<string> {
+    if (!this.fastConfig) return this.complete(systemPrompt, userPrompt);
+    const meta = await this.completeWithMeta(systemPrompt, userPrompt, this.fastConfig);
+    return meta.text;
+  }
+
   /**
    * Like `complete()` but also returns Anthropic prompt-caching metrics.
    * For non-Anthropic providers or when caching is disabled, the token fields are undefined.
    */
-  async completeWithMeta(systemPrompt: string, userPrompt: string): Promise<CompletionMeta> {
+  async completeWithMeta(systemPrompt: string, userPrompt: string, configOverride?: ProviderConfig): Promise<CompletionMeta> {
+    const config = configOverride ?? this.primaryConfig;
     let primaryError: unknown;
     try {
-      return await this.withRetryMeta(this.primaryConfig, systemPrompt, userPrompt);
+      return await this.withRetryMeta(config, systemPrompt, userPrompt);
     } catch (err) {
       primaryError = err;
     }

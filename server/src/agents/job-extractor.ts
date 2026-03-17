@@ -15,7 +15,7 @@ export async function runJobExtractor(
 ): Promise<ExtractionResult> {
   const strippedText = stripHtml(html);
   const userPrompt = `<page_content>\n${strippedText}\n</page_content>`;
-  const raw = await modelService.complete(systemPrompt, userPrompt);
+  const raw = await modelService.completeFast(systemPrompt, userPrompt);
   const text = raw
     .replace(/^```(?:json)?\s*/i, "")
     .replace(/\s*```\s*$/i, "")

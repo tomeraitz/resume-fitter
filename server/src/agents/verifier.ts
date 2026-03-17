@@ -21,7 +21,7 @@ export async function runVerifier(
   history?: string,
 ): Promise<VerifierOutput> {
   const userPrompt = JSON.stringify({ updatedCvHtml, history });
-  const raw = await modelService.complete(systemPrompt, userPrompt);
+  const raw = await modelService.completeFast(systemPrompt, userPrompt);
   const text = raw
     .replace(/^```(?:json)?\s*/i, "")
     .replace(/\s*```\s*$/i, "")
