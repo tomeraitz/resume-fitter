@@ -23,6 +23,7 @@ pipelineRouter.post("/", requireAuth, rateLimiter, async (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
 
   let clientDisconnected = false;
   res.on('close', () => { clientDisconnected = true; });
@@ -31,6 +32,11 @@ pipelineRouter.post("/", requireAuth, rateLimiter, async (req, res) => {
     if (clientDisconnected) return;
     res.write(`event: step\ndata: ${JSON.stringify(step)}\n\n`);
   };
+
+  // Keep the SSE stream active so Chrome doesn't suspend the MV3 service worker
+  const keepalive = setInterval(() => {
+    if (!clientDisconnected) res.write(': keepalive\n\n');
+  }, 15_000);
 
   try {
     const result = await runPipeline(parsed.data, onStepComplete);
@@ -45,6 +51,7 @@ pipelineRouter.post("/", requireAuth, rateLimiter, async (req, res) => {
       res.write(`event: error\ndata: ${JSON.stringify({ error: message })}\n\n`);
     }
   } finally {
+    clearInterval(keepalive);
     res.end();
   }
 });
