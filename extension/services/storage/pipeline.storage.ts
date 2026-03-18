@@ -12,6 +12,7 @@ export const EMPTY_SESSION: PipelineSession = {
   status: 'idle',
   jobDescription: '',
   steps: EMPTY_STEPS,
+  extractedJob: undefined,
   generatedCv: null,
 };
 
