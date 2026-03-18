@@ -4,5 +4,6 @@ export {
   clearPipelineSession,
   updateStepResult,
   setPipelineStatus,
+  setExtractedJob,
   setGeneratedCv,
 } from './pipeline.actions';

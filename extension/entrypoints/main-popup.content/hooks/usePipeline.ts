@@ -21,6 +21,7 @@ interface UsePipelineReturn {
   currentStepNumber: number;
   results: PipelineResults | null;
   error: string | null;
+  isSessionLoading: boolean;
   start: (jobDescription: string, jobTitle?: string, jobCompany?: string) => void;
   cancel: () => void;
 }
@@ -71,7 +72,7 @@ function deriveError(session: typeof EMPTY_SESSION): string | null {
 }
 
 export function usePipeline(): UsePipelineReturn {
-  const { session, cancel: clearSession } = usePipelineSession();
+  const { session, isLoading: isSessionLoading, cancel: clearSession } = usePipelineSession();
 
   const effectiveSession = session ?? EMPTY_SESSION;
 
@@ -112,5 +113,5 @@ export function usePipeline(): UsePipelineReturn {
     clearSession();
   }, [clearSession]);
 
-  return { steps, status, currentStepNumber, results, error, start, cancel };
+  return { steps, status, currentStepNumber, results, error, isSessionLoading, start, cancel };
 }

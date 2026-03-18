@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useUserProfile } from './hooks/useUserProfile';
 import { useExtractJob } from './hooks/useExtractJob';
 import { useJobPageDetection } from './hooks/useJobPageDetection';
@@ -46,11 +46,29 @@ export function App() {
     currentStepNumber,
     results: pipelineResults,
     error: pipelineError,
+    isSessionLoading,
     start: startPipeline,
     cancel: cancelPipeline,
   } = usePipeline();
 
   const [view, setView] = useState<AppView>('initial');
+  const viewInitialized = useRef(false);
+
+  // Restore view from persisted pipeline session on mount
+  useEffect(() => {
+    if (viewInitialized.current) return;
+    if (isSessionLoading) return;
+
+    if (pipelineStatus === 'running') {
+      setView('pipeline');
+    } else if (pipelineStatus === 'completed' && pipelineResults) {
+      setView('pipeline-done');
+    } else if (extractedJob && pipelineStatus === 'idle') {
+      setView('extract-done');
+    }
+
+    viewInitialized.current = true;
+  }, [isSessionLoading, pipelineStatus, pipelineResults, extractedJob]);
 
   const hasProfile =
     profile !== null &&

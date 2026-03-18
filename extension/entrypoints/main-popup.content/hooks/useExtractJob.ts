@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { ExtractedJobDetails } from '@/types/extract';
 import type { ExtractJobResponse } from '@/types/messages';
+import { pipelineSession, setExtractedJob } from '../../../services/storage';
 
 interface UseExtractJobReturn {
   extractedJob: ExtractedJobDetails | null;
@@ -12,11 +13,23 @@ interface UseExtractJobReturn {
 }
 
 export function useExtractJob(): UseExtractJobReturn {
-  const [extractedJob, setExtractedJob] = useState<ExtractedJobDetails | null>(null);
+  const [extractedJob, setExtractedJobState] = useState<ExtractedJobDetails | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const cancelledRef = useRef(false);
+
+  // Hydrate extracted job from persisted session on mount
+  useEffect(() => {
+    let cancelled = false;
+    pipelineSession.getValue().then((session) => {
+      if (cancelled) return;
+      if (session?.extractedJob && session.status === 'idle') {
+        setExtractedJobState(session.extractedJob);
+      }
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   const startExtraction = useCallback(async () => {
     if (isExtracting) return;
@@ -24,7 +37,7 @@ export function useExtractJob(): UseExtractJobReturn {
     cancelledRef.current = false;
     setIsExtracting(true);
     setError(null);
-    setExtractedJob(null);
+    setExtractedJobState(null);
 
     try {
       // Small yield to let React render the loading state
@@ -45,7 +58,8 @@ export function useExtractJob(): UseExtractJobReturn {
       if (cancelledRef.current) return;
 
       if (response.success) {
-        setExtractedJob(response.job);
+        setExtractedJobState(response.job);
+        await setExtractedJob(response.job);
       } else if (response.notJobPage) {
         setError("This page doesn't appear to be a job posting");
       } else {
@@ -68,8 +82,9 @@ export function useExtractJob(): UseExtractJobReturn {
   }, []);
 
   const resetExtraction = useCallback(() => {
-    setExtractedJob(null);
+    setExtractedJobState(null);
     setError(null);
+    setExtractedJob(null);
   }, []);
 
   useEffect(() => {
