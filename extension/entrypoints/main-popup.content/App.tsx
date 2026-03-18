@@ -47,6 +47,7 @@ export function App() {
     results: pipelineResults,
     error: pipelineError,
     isSessionLoading,
+    sessionExtractedJob,
     start: startPipeline,
     cancel: cancelPipeline,
   } = usePipeline();
@@ -63,12 +64,15 @@ export function App() {
       setView('pipeline');
     } else if (pipelineStatus === 'completed' && pipelineResults) {
       setView('pipeline-done');
-    } else if (extractedJob && pipelineStatus === 'idle') {
+    } else if (sessionExtractedJob && pipelineStatus === 'idle') {
       setView('extract-done');
     }
 
     viewInitialized.current = true;
-  }, [isSessionLoading, pipelineStatus, pipelineResults, extractedJob]);
+  }, [isSessionLoading, pipelineStatus, pipelineResults, sessionExtractedJob]);
+
+  // Use local extractedJob if available, fall back to persisted session value
+  const effectiveExtractedJob = extractedJob ?? sessionExtractedJob ?? null;
 
   const hasProfile =
     profile !== null &&
@@ -79,13 +83,13 @@ export function App() {
 
   // Extraction state transitions
   useEffect(() => {
-    if (view === 'extracting' && !isExtracting && extractedJob) {
+    if (view === 'extracting' && !isExtracting && effectiveExtractedJob) {
       setView('extract-done');
     }
     if (view === 'extracting' && !isExtracting && extractError) {
       setView('initial');
     }
-  }, [view, isExtracting, extractedJob, extractError]);
+  }, [view, isExtracting, effectiveExtractedJob, extractError]);
 
   // Pipeline state transitions
   useEffect(() => {
@@ -109,11 +113,11 @@ export function App() {
   };
 
   const handleFitCv = () => {
-    if (!extractedJob) return;
+    if (!effectiveExtractedJob) return;
     startPipeline(
-      extractedJob.description,
-      extractedJob.title,
-      extractedJob.company,
+      effectiveExtractedJob.description,
+      effectiveExtractedJob.title,
+      effectiveExtractedJob.company,
     );
     setView('pipeline');
   };
@@ -174,9 +178,9 @@ export function App() {
       {view === 'extracting' && (
         <ExtractLoadingPanel onCancel={handleCancelExtraction} />
       )}
-      {view === 'extract-done' && extractedJob && (
+      {view === 'extract-done' && effectiveExtractedJob && (
         <ExtractFinishedPanel
-          job={extractedJob}
+          job={effectiveExtractedJob}
           onFitCv={handleFitCv}
           onExtractAgain={handleExtractAgain}
         />

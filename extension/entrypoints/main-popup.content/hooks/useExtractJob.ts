@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { ExtractedJobDetails } from '@/types/extract';
 import type { ExtractJobResponse } from '@/types/messages';
-import { pipelineSession, setExtractedJob } from '../../../services/storage';
+import { setExtractedJob } from '../../../services/storage';
 
 interface UseExtractJobReturn {
   extractedJob: ExtractedJobDetails | null;
@@ -18,18 +18,6 @@ export function useExtractJob(): UseExtractJobReturn {
   const [error, setError] = useState<string | null>(null);
 
   const cancelledRef = useRef(false);
-
-  // Hydrate extracted job from persisted session on mount
-  useEffect(() => {
-    let cancelled = false;
-    pipelineSession.getValue().then((session) => {
-      if (cancelled) return;
-      if (session?.extractedJob && session.status === 'idle') {
-        setExtractedJobState(session.extractedJob);
-      }
-    }).catch(() => {});
-    return () => { cancelled = true; };
-  }, []);
 
   const startExtraction = useCallback(async () => {
     if (isExtracting) return;

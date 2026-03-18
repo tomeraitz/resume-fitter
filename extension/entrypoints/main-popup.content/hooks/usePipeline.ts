@@ -6,6 +6,7 @@ import type {
   PipelineStatus,
   StepsRecord,
 } from '../../../types/pipeline';
+import type { ExtractedJobDetails } from '../../../types/extract';
 import { EMPTY_SESSION } from '../../../services/storage';
 
 const STEP_ORDER: AgentStep[] = [
@@ -22,6 +23,7 @@ interface UsePipelineReturn {
   results: PipelineResults | null;
   error: string | null;
   isSessionLoading: boolean;
+  sessionExtractedJob: ExtractedJobDetails | undefined;
   start: (jobDescription: string, jobTitle?: string, jobCompany?: string) => void;
   cancel: () => void;
 }
@@ -78,6 +80,7 @@ export function usePipeline(): UsePipelineReturn {
 
   const status = effectiveSession.status;
   const steps = effectiveSession.steps;
+  const sessionExtractedJob = effectiveSession.extractedJob;
 
   const currentStepNumber = useMemo(
     () => (status === 'running' ? deriveCurrentStep(steps) : 0),
@@ -113,5 +116,5 @@ export function usePipeline(): UsePipelineReturn {
     clearSession();
   }, [clearSession]);
 
-  return { steps, status, currentStepNumber, results, error, isSessionLoading, start, cancel };
+  return { steps, status, currentStepNumber, results, error, isSessionLoading, sessionExtractedJob, start, cancel };
 }
