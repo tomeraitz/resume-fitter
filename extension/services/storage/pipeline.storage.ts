@@ -10,6 +10,7 @@ const EMPTY_STEPS: StepsRecord = {
 
 export const EMPTY_SESSION: PipelineSession = {
   status: 'idle',
+  extractionStatus: 'idle',
   jobDescription: '',
   steps: EMPTY_STEPS,
   extractedJob: undefined,

@@ -1,4 +1,4 @@
-import type { AgentStep, StepStatus, AgentResultData, PipelineSession } from '../../types/pipeline';
+import type { AgentStep, StepStatus, AgentResultData, PipelineSession, ExtractionStatus } from '../../types/pipeline';
 import type { ExtractedJobDetails } from '../../types/extract';
 import { pipelineSession, EMPTY_SESSION } from './pipeline.storage';
 
@@ -39,6 +39,13 @@ export async function setPipelineStatus(
   await mutatePipelineSession((session) => ({
     ...session,
     status,
+  }));
+}
+
+export async function setExtractionStatus(status: ExtractionStatus): Promise<void> {
+  await mutatePipelineSession((session) => ({
+    ...session,
+    extractionStatus: status,
   }));
 }
 

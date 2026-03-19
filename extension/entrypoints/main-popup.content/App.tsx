@@ -43,6 +43,7 @@ export function App() {
   const {
     steps,
     status: pipelineStatus,
+    extractionStatus,
     currentStepNumber,
     results: pipelineResults,
     error: pipelineError,
@@ -64,12 +65,14 @@ export function App() {
       setView('pipeline');
     } else if (pipelineStatus === 'completed' && pipelineResults) {
       setView('pipeline-done');
+    } else if (extractionStatus === 'extracting') {
+      setView('extracting');
     } else if (sessionExtractedJob && pipelineStatus === 'idle') {
       setView('extract-done');
     }
 
     viewInitialized.current = true;
-  }, [isSessionLoading, pipelineStatus, pipelineResults, sessionExtractedJob]);
+  }, [isSessionLoading, pipelineStatus, pipelineResults, extractionStatus, sessionExtractedJob]);
 
   // Use local extractedJob if available, fall back to persisted session value
   const effectiveExtractedJob = extractedJob ?? sessionExtractedJob ?? null;
@@ -83,13 +86,13 @@ export function App() {
 
   // Extraction state transitions
   useEffect(() => {
-    if (view === 'extracting' && !isExtracting && effectiveExtractedJob) {
+    if (view === 'extracting' && extractionStatus === 'done' && effectiveExtractedJob) {
       setView('extract-done');
     }
-    if (view === 'extracting' && !isExtracting && extractError) {
+    if (view === 'extracting' && extractionStatus === 'error') {
       setView('initial');
     }
-  }, [view, isExtracting, effectiveExtractedJob, extractError]);
+  }, [view, extractionStatus, effectiveExtractedJob]);
 
   // Pipeline state transitions
   useEffect(() => {
@@ -109,6 +112,7 @@ export function App() {
 
   const handleCancelExtraction = () => {
     cancelExtraction();
+    browser.runtime.sendMessage({ type: 'cancel-extraction' });
     setView('initial');
   };
 

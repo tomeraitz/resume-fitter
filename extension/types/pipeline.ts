@@ -2,6 +2,8 @@ import type { ExtractedJobDetails } from './extract';
 
 type PipelineStatus = 'idle' | 'running' | 'completed' | 'error';
 
+type ExtractionStatus = 'idle' | 'extracting' | 'done' | 'error';
+
 type AgentStep = 'hiring-manager' | 'rewrite-resume' | 'ats-scanner' | 'verifier';
 
 type StepStatus = 'pending' | 'running' | 'completed' | 'error';
@@ -23,6 +25,7 @@ type StepsRecord = Record<AgentStep, AgentResult>;
 
 interface PipelineSession {
   status: PipelineStatus;
+  extractionStatus: ExtractionStatus;
   jobDescription: string;
   jobTitle?: string;
   jobCompany?: string;
@@ -40,6 +43,7 @@ interface PipelineResults {
 
 export type {
   PipelineStatus,
+  ExtractionStatus,
   AgentStep,
   StepStatus,
   AgentResultData,

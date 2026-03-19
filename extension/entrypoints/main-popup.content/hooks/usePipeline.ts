@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { usePipelineSession } from './usePipelineSession';
 import type {
   AgentStep,
+  ExtractionStatus,
   PipelineResults,
   PipelineStatus,
   StepsRecord,
@@ -19,6 +20,7 @@ const STEP_ORDER: AgentStep[] = [
 interface UsePipelineReturn {
   steps: StepsRecord;
   status: PipelineStatus;
+  extractionStatus: ExtractionStatus;
   currentStepNumber: number;
   results: PipelineResults | null;
   error: string | null;
@@ -79,6 +81,7 @@ export function usePipeline(): UsePipelineReturn {
   const effectiveSession = session ?? EMPTY_SESSION;
 
   const status = effectiveSession.status;
+  const extractionStatus = effectiveSession.extractionStatus;
   const steps = effectiveSession.steps;
   const sessionExtractedJob = effectiveSession.extractedJob;
 
@@ -116,5 +119,5 @@ export function usePipeline(): UsePipelineReturn {
     clearSession();
   }, [clearSession]);
 
-  return { steps, status, currentStepNumber, results, error, isSessionLoading, sessionExtractedJob, start, cancel };
+  return { steps, status, extractionStatus, currentStepNumber, results, error, isSessionLoading, sessionExtractedJob, start, cancel };
 }

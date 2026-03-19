@@ -1,7 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import type { ExtractedJobDetails } from '@/types/extract';
 import type { ExtractJobResponse } from '@/types/messages';
-import { setExtractedJob } from '../../../services/storage';
 
 interface UseExtractJobReturn {
   extractedJob: ExtractedJobDetails | null;
@@ -47,7 +46,6 @@ export function useExtractJob(): UseExtractJobReturn {
 
       if (response.success) {
         setExtractedJobState(response.job);
-        await setExtractedJob(response.job);
       } else if (response.notJobPage) {
         setError("This page doesn't appear to be a job posting");
       } else {
@@ -72,7 +70,6 @@ export function useExtractJob(): UseExtractJobReturn {
   const resetExtraction = useCallback(() => {
     setExtractedJobState(null);
     setError(null);
-    setExtractedJob(null);
   }, []);
 
   useEffect(() => {
