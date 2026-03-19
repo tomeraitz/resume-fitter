@@ -12,7 +12,7 @@ export function App() {
     window.close();
   };
 
-  const handleDownload = async () => {
+  const handleDownload = () => {
     if (previewState.status !== 'ready') return;
 
     const blob = new Blob([previewState.data.finalCv], { type: 'text/html' });
@@ -21,13 +21,16 @@ export function App() {
     a.href = url;
     a.download = 'tailored-cv.html';
     a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
 
-    await closeAndClear();
+    // Delay closing so the browser can initiate the download
+    setTimeout(async () => {
+      URL.revokeObjectURL(url);
+      await closeAndClear();
+    }, 500);
   };
 
-  const handleCancel = () => {
-    closeAndClear();
+  const handleCancel = async () => {
+    await closeAndClear();
   };
 
   if (previewState.status === 'loading') {
