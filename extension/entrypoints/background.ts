@@ -1,4 +1,4 @@
-import { userProfile, pipelineSession, EMPTY_SESSION, clearPipelineSession, setPipelineStatus, updateStepResult, setGeneratedCv } from '../services/storage';
+import { userProfile, pipelineSession, EMPTY_SESSION, clearPipelineSession, setPipelineStatus, setExtractionStatus, setExtractedJob, updateStepResult, setGeneratedCv } from '../services/storage';
 import type { RunPipelineMessage } from '../types/messages';
 import type { AgentStep, AgentResultData } from '../types/pipeline';
 import { handleExtractJob, isExtractJobMessage, signJwt } from '../utils/handleExtractJob';
@@ -69,7 +69,17 @@ export default defineBackground(() => {
     if (sender.id !== browser.runtime.id) return;
 
     if (isExtractJobMessage(message)) {
-      handleExtractJob(message.html).then(sendResponse);
+      setExtractionStatus('extracting').then(() =>
+        handleExtractJob(message.html).then(async (response) => {
+          if (response.success) {
+            await setExtractedJob(response.job);
+            await setExtractionStatus('done');
+          } else {
+            await setExtractionStatus('error');
+          }
+          sendResponse(response);
+        }),
+      );
       return true; // Keep message channel open for async response
     }
 
@@ -83,6 +93,11 @@ export default defineBackground(() => {
     if (isCancelMessage(message)) {
       currentAbort?.abort();
       clearPipelineSession();
+      return true;
+    }
+
+    if (typeof message === 'object' && message !== null && (message as Record<string, unknown>).type === 'cancel-extraction') {
+      setExtractionStatus('idle');
       return true;
     }
 

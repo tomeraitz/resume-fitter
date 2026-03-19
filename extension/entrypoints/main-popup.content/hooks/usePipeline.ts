@@ -2,10 +2,12 @@ import { useCallback, useMemo } from 'react';
 import { usePipelineSession } from './usePipelineSession';
 import type {
   AgentStep,
+  ExtractionStatus,
   PipelineResults,
   PipelineStatus,
   StepsRecord,
 } from '../../../types/pipeline';
+import type { ExtractedJobDetails } from '../../../types/extract';
 import { EMPTY_SESSION } from '../../../services/storage';
 
 const STEP_ORDER: AgentStep[] = [
@@ -18,9 +20,12 @@ const STEP_ORDER: AgentStep[] = [
 interface UsePipelineReturn {
   steps: StepsRecord;
   status: PipelineStatus;
+  extractionStatus: ExtractionStatus;
   currentStepNumber: number;
   results: PipelineResults | null;
   error: string | null;
+  isSessionLoading: boolean;
+  sessionExtractedJob: ExtractedJobDetails | undefined;
   start: (jobDescription: string, jobTitle?: string, jobCompany?: string) => void;
   cancel: () => void;
 }
@@ -71,12 +76,14 @@ function deriveError(session: typeof EMPTY_SESSION): string | null {
 }
 
 export function usePipeline(): UsePipelineReturn {
-  const { session, cancel: clearSession } = usePipelineSession();
+  const { session, isLoading: isSessionLoading, cancel: clearSession } = usePipelineSession();
 
   const effectiveSession = session ?? EMPTY_SESSION;
 
   const status = effectiveSession.status;
+  const extractionStatus = effectiveSession.extractionStatus;
   const steps = effectiveSession.steps;
+  const sessionExtractedJob = effectiveSession.extractedJob;
 
   const currentStepNumber = useMemo(
     () => (status === 'running' ? deriveCurrentStep(steps) : 0),
@@ -112,5 +119,5 @@ export function usePipeline(): UsePipelineReturn {
     clearSession();
   }, [clearSession]);
 
-  return { steps, status, currentStepNumber, results, error, start, cancel };
+  return { steps, status, extractionStatus, currentStepNumber, results, error, isSessionLoading, sessionExtractedJob, start, cancel };
 }

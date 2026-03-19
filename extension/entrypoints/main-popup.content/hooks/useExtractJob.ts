@@ -12,7 +12,7 @@ interface UseExtractJobReturn {
 }
 
 export function useExtractJob(): UseExtractJobReturn {
-  const [extractedJob, setExtractedJob] = useState<ExtractedJobDetails | null>(null);
+  const [extractedJob, setExtractedJobState] = useState<ExtractedJobDetails | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,7 +24,7 @@ export function useExtractJob(): UseExtractJobReturn {
     cancelledRef.current = false;
     setIsExtracting(true);
     setError(null);
-    setExtractedJob(null);
+    setExtractedJobState(null);
 
     try {
       // Small yield to let React render the loading state
@@ -45,7 +45,7 @@ export function useExtractJob(): UseExtractJobReturn {
       if (cancelledRef.current) return;
 
       if (response.success) {
-        setExtractedJob(response.job);
+        setExtractedJobState(response.job);
       } else if (response.notJobPage) {
         setError("This page doesn't appear to be a job posting");
       } else {
@@ -68,7 +68,7 @@ export function useExtractJob(): UseExtractJobReturn {
   }, []);
 
   const resetExtraction = useCallback(() => {
-    setExtractedJob(null);
+    setExtractedJobState(null);
     setError(null);
   }, []);
 

@@ -3,6 +3,11 @@ import { useExtractJob } from './useExtractJob';
 import type { ExtractJobResponse } from '@/types/messages';
 import type { ExtractedJobDetails } from '@/types/extract';
 
+// -- Mock the storage module used by the hook --
+vi.mock('../../../services/storage', () => ({
+  setExtractedJob: vi.fn().mockResolvedValue(undefined),
+}));
+
 // -- Mock the WXT `browser` global used by the hook --
 const sendMessageMock = vi.fn();
 
