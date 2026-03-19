@@ -16,6 +16,10 @@ interface ExtractJobMessage {
   html: string;
 }
 
+interface OpenCvPreviewMessage {
+  type: 'open-cv-preview';
+}
+
 type ExtractJobResponse =
   | { success: true; job: ExtractedJobDetails }
   | { success: false; error: string; notJobPage?: boolean };
@@ -23,12 +27,14 @@ type ExtractJobResponse =
 type ExtensionMessage =
   | RunPipelineMessage
   | CancelPipelineMessage
-  | ExtractJobMessage;
+  | ExtractJobMessage
+  | OpenCvPreviewMessage;
 
 export type {
   RunPipelineMessage,
   CancelPipelineMessage,
   ExtractJobMessage,
+  OpenCvPreviewMessage,
   ExtractJobResponse,
   ExtensionMessage,
 };
