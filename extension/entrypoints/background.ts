@@ -113,6 +113,13 @@ export default defineBackground(() => {
         browser.tabs.sendMessage(sender.tab.id, { type: 'close-popup' });
         return true;
       }
+
+      if (type === 'open-cv-preview') {
+        browser.tabs.create({
+          url: browser.runtime.getURL('/cv-preview.html'),
+        });
+        return true;
+      }
     }
   });
 });

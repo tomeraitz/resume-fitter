@@ -62,7 +62,7 @@ export function PipelineCompletePanel({
           className="flex h-11 w-full items-center justify-center gap-2 rounded bg-accent-400 font-body text-base font-semibold text-white shadow-button shadow-[0_0_12px_rgba(245,166,35,0.12)] transition-colors hover:bg-accent-500 active:bg-accent-600"
         >
           <Eye size={16} strokeWidth={1.5} />
-          Review CV
+          Preview CV
         </button>
 
         <button
