@@ -133,13 +133,8 @@ export function App() {
 
   const handleReviewCv = () => {
     if (!pipelineResults?.finalCv) return;
-    const blob = new Blob([pipelineResults.finalCv], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'tailored-cv.html';
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    browser.runtime.sendMessage({ type: 'open-cv-preview' });
+    browser.runtime.sendMessage({ type: 'close-popup' });
   };
 
   const handleExtractAgain = () => {

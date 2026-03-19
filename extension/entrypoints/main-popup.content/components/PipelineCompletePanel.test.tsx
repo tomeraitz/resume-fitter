@@ -42,11 +42,11 @@ describe('PipelineCompletePanel', () => {
     expect(screen.getByText('2 flags')).toBeInTheDocument();
   });
 
-  it('"Review CV" button calls onReviewCv', async () => {
+  it('"Preview CV" button calls onReviewCv', async () => {
     const onReviewCv = vi.fn();
     render(<PipelineCompletePanel {...defaultProps} onReviewCv={onReviewCv} />);
 
-    await userEvent.click(screen.getByRole('button', { name: /review cv/i }));
+    await userEvent.click(screen.getByRole('button', { name: /preview cv/i }));
     expect(onReviewCv).toHaveBeenCalledOnce();
   });
 
