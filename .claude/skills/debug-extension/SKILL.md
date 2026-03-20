@@ -128,20 +128,15 @@ mcp__playwright__browser_take_screenshot({ type: "png" })
 
 The extension popup renders as a **shadow DOM** element (`<resume-fitter-popup>`) overlaid on the page.
 
-### Step 9: Run E2E test scenarios
+### Step 9: Test the extension according to instructions
 
-Scan the `e2e/tests/` directory for all `.md` test files. Read each file and execute the steps described in it, in order (01, 02, 03, ...).
+The `e2e/` folder contains CV mock data you can use for testing. However, do **not** run pre-defined E2E test scripts automatically. Instead:
 
-```bash
-ls e2e/tests/*.md
-```
-
-For each test file:
-1. Read the file to understand the steps and pass criteria
-2. Execute each step using Playwright MCP and CDP as described
-3. Take screenshots after key interactions to verify visually
-4. When a step calls for `frontend-design` validation, use the `/frontend-design` skill to review the screenshot
-5. Report PASS or FAIL for each test with details on any failures
+1. Read the prompt/instructions you were given to understand **what** needs to be tested
+2. Based on those instructions, decide which scenarios to test and how
+3. Use the CV mock data from `e2e/` as needed for your test scenarios
+4. Take screenshots after key interactions to verify visually
+5. Report PASS or FAIL for each scenario with details on any failures
 
 Since the popup lives inside a shadow DOM, always use `browser_evaluate` with `shadowRoot` queries to interact with elements:
 
