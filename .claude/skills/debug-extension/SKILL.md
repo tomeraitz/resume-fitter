@@ -149,7 +149,16 @@ Since the popup lives inside a shadow DOM, always use `browser_evaluate` with `s
 }
 ```
 
-### Step 10: Cleanup
+### Step 10: Debug and verify the scenario
+
+After testing, debug the scenario thoroughly:
+
+1. **Check the extension for errors** — open the browser console via CDP and look for JavaScript errors, failed network requests, or unhandled promise rejections in the extension's context
+2. **Check the backend for errors** — review the Docker compose logs (`docker compose logs`) for any server errors, crashes, or unexpected behavior
+3. **Verify everything works as expected** — confirm that the full flow (from page load to popup interaction to backend communication) behaves correctly
+4. If any errors are found, **report them clearly** with details: what failed, where, and any relevant error messages or stack traces
+
+### Step 11: Cleanup
 
 When done, kill only the processes on port 9222:
 
