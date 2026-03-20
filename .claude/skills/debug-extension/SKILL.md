@@ -25,7 +25,17 @@ for /f "tokens=5" %a in ('netstat -aon ^| findstr :9222 ^| findstr LISTENING') d
 
 Wait 2 seconds for cleanup.
 
-### Step 2: Start extension dev server
+### Step 2: Start Docker services
+
+Start the required backend services:
+
+```bash
+docker compose up --build
+```
+
+Run this as a **background task**. Wait for the services to be healthy before proceeding.
+
+### Step 3: Start extension dev server
 
 Run the WXT dev server in the background:
 
@@ -39,7 +49,7 @@ Run this as a **background task**. Wait ~15 seconds, then check the output for:
 
 If you see `ENOENT` errors, retry — the previous build output may have been cleaned up.
 
-### Step 3: Get the extension ID
+### Step 4: Get the extension ID
 
 Query the CDP endpoint to find the extension's service worker, which contains the extension ID:
 
@@ -50,7 +60,7 @@ curl -s http://localhost:9222/json
 Look for the `service_worker` entry. The extension ID is in the URL:
 `chrome-extension://<EXTENSION_ID>/background.js`
 
-### Step 4: Start the E2E mock server
+### Step 5: Start the E2E mock server
 
 In a separate background task, start the mock page server:
 
@@ -61,7 +71,7 @@ cd e2e && npm run serve
 This serves mock job pages at `http://localhost:3006`. Available routes:
 - `http://localhost:3006/test-comp/jobs/4488055101` — Greenhouse AI Engineer posting
 
-### Step 5: Navigate to the test page
+### Step 6: Navigate to the test page
 
 Use Playwright MCP to navigate to the mock job page:
 
@@ -69,7 +79,7 @@ Use Playwright MCP to navigate to the mock job page:
 mcp__playwright__browser_navigate({ url: "http://localhost:3006/test-comp/jobs/4488055101" })
 ```
 
-### Step 6: Trigger the extension popup
+### Step 7: Trigger the extension popup
 
 Playwright MCP **blocks `chrome-extension://` URLs**, so you cannot navigate to `popup.html` directly.
 
@@ -106,9 +116,9 @@ asyncio.run(trigger())
 "
 ```
 
-Replace `<SERVICE_WORKER_ID>` with the `id` from Step 3's CDP `/json` response.
+Replace `<SERVICE_WORKER_ID>` with the `id` from Step 4's CDP `/json` response.
 
-### Step 7: Verify the popup visually
+### Step 8: Verify the popup visually
 
 Take a screenshot to confirm the popup rendered:
 
@@ -118,20 +128,15 @@ mcp__playwright__browser_take_screenshot({ type: "png" })
 
 The extension popup renders as a **shadow DOM** element (`<resume-fitter-popup>`) overlaid on the page.
 
-### Step 8: Run E2E test scenarios
+### Step 9: Test the extension according to instructions
 
-Scan the `e2e/tests/` directory for all `.md` test files. Read each file and execute the steps described in it, in order (01, 02, 03, ...).
+The `e2e/` folder contains CV mock data you can use for testing. However, do **not** run pre-defined E2E test scripts automatically. Instead:
 
-```bash
-ls e2e/tests/*.md
-```
-
-For each test file:
-1. Read the file to understand the steps and pass criteria
-2. Execute each step using Playwright MCP and CDP as described
-3. Take screenshots after key interactions to verify visually
-4. When a step calls for `frontend-design` validation, use the `/frontend-design` skill to review the screenshot
-5. Report PASS or FAIL for each test with details on any failures
+1. Read the prompt/instructions you were given to understand **what** needs to be tested
+2. Based on those instructions, decide which scenarios to test and how
+3. Use the CV mock data from `e2e/` as needed for your test scenarios
+4. Take screenshots after key interactions to verify visually
+5. Report PASS or FAIL for each scenario with details on any failures
 
 Since the popup lives inside a shadow DOM, always use `browser_evaluate` with `shadowRoot` queries to interact with elements:
 
@@ -144,12 +149,43 @@ Since the popup lives inside a shadow DOM, always use `browser_evaluate` with `s
 }
 ```
 
-### Step 9: Cleanup
+### Step 10: Debug and verify the scenario
 
-When done, kill only the processes on port 9222:
+After testing, debug the scenario thoroughly:
 
+1. **Check the extension for errors** — open the browser console via CDP and look for JavaScript errors, failed network requests, or unhandled promise rejections in the extension's context
+2. **Check the backend for errors** — review the Docker compose logs (`docker compose logs`) for any server errors, crashes, or unexpected behavior
+3. **Verify everything works as expected** — confirm that the full flow (from page load to popup interaction to backend communication) behaves correctly
+4. If any errors are found, **report them clearly** with details: what failed, where, and any relevant error messages or stack traces
+
+### Step 11: Cleanup
+
+When done, shut down all services started during the workflow:
+
+1. **Stop Docker services:**
 ```bash
-for /f "tokens=5" %a in ('netstat -aon ^| findstr :9222 ^| findstr LISTENING') do taskkill //F //PID %a
+docker compose down
+```
+
+2. **Kill the Chrome debug browser (port 9222) and WXT dev server:**
+```bash
+lsof -ti :9222 | xargs -r kill -9
+```
+
+3. **Kill the E2E mock server (port 3006):**
+```bash
+lsof -ti :3006 | xargs -r kill -9
+```
+
+4. **Close the Playwright browser:**
+```
+mcp__playwright__browser_close()
+```
+
+5. **Kill any remaining Node.js processes** spawned by this workflow:
+```bash
+pkill -f "wxt dev" || true
+pkill -f "e2e.*serve" || true
 ```
 
 ## Key Limitations
