@@ -160,10 +160,32 @@ After testing, debug the scenario thoroughly:
 
 ### Step 11: Cleanup
 
-When done, kill only the processes on port 9222:
+When done, shut down all services started during the workflow:
 
+1. **Stop Docker services:**
 ```bash
-for /f "tokens=5" %a in ('netstat -aon ^| findstr :9222 ^| findstr LISTENING') do taskkill //F //PID %a
+docker compose down
+```
+
+2. **Kill the Chrome debug browser (port 9222) and WXT dev server:**
+```bash
+lsof -ti :9222 | xargs -r kill -9
+```
+
+3. **Kill the E2E mock server (port 3006):**
+```bash
+lsof -ti :3006 | xargs -r kill -9
+```
+
+4. **Close the Playwright browser:**
+```
+mcp__playwright__browser_close()
+```
+
+5. **Kill any remaining Node.js processes** spawned by this workflow:
+```bash
+pkill -f "wxt dev" || true
+pkill -f "e2e.*serve" || true
 ```
 
 ## Key Limitations
