@@ -77,20 +77,19 @@ After all tasks have been implemented and validated:
 E2E testing is **always required** — never skip this step.
 
 1. Run the `debug-extension` skill to launch the extension and connect Playwright MCP.
-2. Tell the `debug-extension` skill **what to test** based on the changes made in Step 3 — provide it with a list of features, flows, and UI elements that were created or modified.
-3. Execute **all** test files in `e2e/tests/` in order.
-4. Wait for all tests to complete.
+2. Tell the `debug-extension` skill **what to test** based on the changes made in Step 3 — provide it with a list of features, flows, and UI elements that were created or modified. The `debug-extension` skill will determine how to test them on its own.
+3. Wait for the `debug-extension` skill to finish testing.
 
-**If tests fail:**
+**If the `debug-extension` skill finds errors:**
 
-- Add each failure as a new task in the TodoWrite task list with full error details.
-- **Assign each failure to the agent that originally implemented the related task** (e.g., if a popup UI test fails, assign it to `wxt-react-expert`; if an API integration test fails, assign it to `ai-node-expert`).
+- Add each error as a new task in the TodoWrite task list with full error details.
+- **Assign each error to the agent that originally implemented the related task** (e.g., if a popup UI error, assign it to `wxt-react-expert`; if an API integration error, assign it to `ai-node-expert`).
 - Loop back to **Step 3** — run the **assigned agent** (not the orchestrator) to fix the issues.
 - Re-run the **validator** agent after fixes.
 - Re-run from **Step 4** (security scan) and then **Step 5** (E2E tests) again after fixes.
-- Repeat until all E2E tests pass.
+- Repeat until the `debug-extension` skill reports no errors.
 
-**If tests pass:** proceed to Step 6.
+**If no errors found:** proceed to Step 6.
 
 ---
 
