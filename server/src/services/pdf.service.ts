@@ -49,8 +49,29 @@ export async function convertPdfToHtml(pdfBuffer: Buffer): Promise<string> {
 
       const svgContent = outBuf.asString();
 
+      // Extract link annotations and build transparent overlay anchors
+      const links = page.getLinks();
+      let linkOverlay = "";
+      if (links.length > 0) {
+        const anchors = links
+          .filter((link) => link.isExternal())
+          .map((link) => {
+            const [x0, y0, x1, y1] = link.getBounds();
+            const uri = link.getURI();
+            const lx = x0 - bounds[0];
+            const ly = y0 - bounds[1];
+            const lw = x1 - x0;
+            const lh = y1 - y0;
+            return `<a href="${escapeAttr(uri)}" target="_blank" rel="noopener noreferrer" style="position:absolute;left:${lx}px;top:${ly}px;width:${lw}px;height:${lh}px;display:block"></a>`;
+          })
+          .join("\n");
+        if (anchors) {
+          linkOverlay = `\n<div class="pdf-links" style="position:absolute;top:0;left:0;width:100%;height:100%">\n${anchors}\n</div>`;
+        }
+      }
+
       pageSvgs.push(
-        `<div class="pdf-page" style="width:${Math.round(width)}px;height:${Math.round(height)}px;margin:0 auto 20px;overflow:hidden">\n${svgContent}\n</div>`,
+        `<div class="pdf-page" style="position:relative;width:${Math.round(width)}px;height:${Math.round(height)}px;margin:0 auto 20px;overflow:hidden">\n${svgContent}${linkOverlay}\n</div>`,
       );
     }
 
@@ -64,6 +85,14 @@ export async function convertPdfToHtml(pdfBuffer: Buffer): Promise<string> {
   }
 }
 
+function escapeAttr(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 function buildHtml(pages: string[]): string {
   return `<!DOCTYPE html>
 <html>
@@ -71,8 +100,10 @@ function buildHtml(pages: string[]): string {
 <meta charset="utf-8">
 <style>
 body { background: #f5f5f5; margin: 0; padding: 20px; }
-.pdf-page { background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.pdf-page { background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.15); position: relative; }
 .pdf-page svg { display: block; width: 100%; height: auto; }
+.pdf-links { z-index: 1; }
+.pdf-links a { cursor: pointer; }
 </style>
 </head>
 <body>
