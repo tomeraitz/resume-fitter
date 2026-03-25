@@ -40,26 +40,7 @@ Wait for the user's confirmation or corrections before continuing. Do NOT procee
 
 ---
 
-## Step 3 — Brainstorm
-
-Brainstorm with the following context:
-
-- The feature description from Step 1
-- The classification and clarifications from Step 2
-- The confirmed feature scope (frontend / backend / full-stack)
-- Any specific user requirements or constraints mentioned
-
-The brainstorm should explore:
-- Different implementation approaches and trade-offs
-- UX/DX considerations
-- Architecture decisions
-- Edge cases and potential pitfalls
-
-Wait for the brainstorm to complete before proceeding.
-
----
-
-## Step 4 — Create Implementation Plan
+## Step 3 — Create Implementation Plan
 
 Based on the **feature scope** determined in Step 2, launch the appropriate agent(s):
 
