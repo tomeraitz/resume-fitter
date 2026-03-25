@@ -1,4 +1,4 @@
-import { PDFParse } from "pdf-parse";
+import * as mupdf from "mupdf";
 
 export class PdfConversionError extends Error {
   constructor(message: string) {
@@ -8,68 +8,75 @@ export class PdfConversionError extends Error {
 }
 
 /**
- * Convert a PDF buffer to HTML using pdf-parse (pure JS, no external binaries).
+ * Convert a PDF buffer to high-fidelity HTML using MuPDF's WASM engine.
  *
- * pdf-parse extracts plain text; we wrap each paragraph in a <p> tag
- * so downstream consumers that expect HTML still get valid markup.
+ * Each page is rendered to SVG via MuPDF's DocumentWriter, which processes
+ * the full page rendering pipeline — preserving backgrounds, lines, shapes,
+ * colors, fonts, images, and all visual decorations. The SVGs are then
+ * wrapped in an HTML document.
+ *
+ * This approach produces output that closely mirrors the original PDF's
+ * visual appearance, unlike text-only extraction methods.
  */
 export async function convertPdfToHtml(pdfBuffer: Buffer): Promise<string> {
-  let parser: PDFParse | undefined;
-
   try {
-    parser = new PDFParse({ data: new Uint8Array(pdfBuffer) });
-    const result = await parser.getText();
-    const text = result.text;
+    const doc = mupdf.Document.openDocument(
+      new Uint8Array(pdfBuffer),
+      "application/pdf",
+    );
 
-    if (!text || text.trim().length === 0) {
-      throw new PdfConversionError(
-        "PDF appears to contain no extractable text (possibly scanned/image-only)",
+    const totalPages = doc.countPages();
+
+    if (totalPages === 0) {
+      throw new PdfConversionError("PDF contains no pages");
+    }
+
+    const pageSvgs: string[] = [];
+
+    for (let i = 0; i < totalPages; i++) {
+      const page = doc.loadPage(i);
+      const bounds = page.getBounds();
+      const width = bounds[2] - bounds[0];
+      const height = bounds[3] - bounds[1];
+
+      // Render page to SVG via DocumentWriter (captures ALL visual elements)
+      const outBuf = new mupdf.Buffer();
+      const writer = new mupdf.DocumentWriter(outBuf, "svg", "");
+      const device = writer.beginPage([bounds[0], bounds[1], bounds[2], bounds[3]]);
+      page.run(device, mupdf.Matrix.identity);
+      writer.endPage();
+      writer.close();
+
+      const svgContent = outBuf.asString();
+
+      pageSvgs.push(
+        `<div class="pdf-page" style="width:${Math.round(width)}px;height:${Math.round(height)}px;margin:0 auto 20px;overflow:hidden">\n${svgContent}\n</div>`,
       );
     }
 
-    return textToHtml(text);
+    return buildHtml(pageSvgs);
   } catch (err) {
     if (err instanceof PdfConversionError) throw err;
 
     const message =
       err instanceof Error ? err.message : "Unknown PDF parsing error";
     throw new PdfConversionError(`PDF conversion failed: ${message}`);
-  } finally {
-    await parser?.destroy().catch(() => {});
   }
 }
 
-/**
- * Wrap plain text in minimal HTML structure.
- * Each paragraph (separated by blank lines) becomes a <p> element.
- * Consecutive non-blank lines within a paragraph are joined with <br>.
- */
-function textToHtml(text: string): string {
-  const paragraphs = text.split(/\n{2,}/);
-
-  const body = paragraphs
-    .map((p) => p.trim())
-    .filter((p) => p.length > 0)
-    .map((p) => {
-      const escaped = escapeHtml(p);
-      const withBreaks = escaped.replace(/\n/g, "<br>\n");
-      return `<p>${withBreaks}</p>`;
-    })
-    .join("\n");
-
+function buildHtml(pages: string[]): string {
   return `<!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"></head>
+<head>
+<meta charset="utf-8">
+<style>
+body { background: #f5f5f5; margin: 0; padding: 20px; }
+.pdf-page { background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.pdf-page svg { display: block; width: 100%; height: auto; }
+</style>
+</head>
 <body>
-${body}
+${pages.join("\n")}
 </body>
 </html>`;
-}
-
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }
