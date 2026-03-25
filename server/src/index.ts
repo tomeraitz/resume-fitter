@@ -3,6 +3,7 @@ import express from "express";
 import { pipelineRouter } from "./routes/pipeline.js";
 import { chatRouter } from "./routes/chat.js";
 import { extractRouter } from "./routes/extract.js";
+import { pdfRouter } from "./routes/pdf.js";
 // Eagerly import so ModelService validates env vars at startup
 import "./agents/orchestrator.js";
 import "./routes/chat.js";
@@ -21,6 +22,7 @@ app.use(express.json({ limit: "512kb" }));
 app.use("/pipeline", pipelineRouter);
 app.use("/chat", chatRouter);
 app.use("/extract", extractRouter);
+app.use("/pdf-to-html", pdfRouter);
 
 const port = process.env["PORT"] ?? "3001";
 app.listen(Number(port), () => {
