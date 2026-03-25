@@ -1,5 +1,5 @@
 import { userProfile, pipelineSession, EMPTY_SESSION, clearPipelineSession, setPipelineStatus, setExtractionStatus, setExtractedJob, updateStepResult, setGeneratedCv } from '../services/storage';
-import type { RunPipelineMessage } from '../types/messages';
+import type { RunPipelineMessage, ConvertPdfResponse } from '../types/messages';
 import type { AgentStep, AgentResultData } from '../types/pipeline';
 import { handleExtractJob, isExtractJobMessage, signJwt } from '../utils/handleExtractJob';
 
@@ -19,6 +19,57 @@ function isRunPipelineMessage(msg: unknown): msg is RunPipelineMessage {
 function isCancelMessage(msg: unknown): boolean {
   if (typeof msg !== 'object' || msg === null) return false;
   return (msg as Record<string, unknown>).type === 'cancel-pipeline';
+}
+
+function isConvertPdfMessage(msg: unknown): msg is { type: 'convert-pdf'; pdfBase64: string; fileName: string } {
+  if (typeof msg !== 'object' || msg === null) return false;
+  const m = msg as Record<string, unknown>;
+  return (
+    m.type === 'convert-pdf' &&
+    typeof m.pdfBase64 === 'string' &&
+    m.pdfBase64.length > 0 &&
+    typeof m.fileName === 'string'
+  );
+}
+
+async function handleConvertPdf(pdfBase64: string, fileName: string): Promise<ConvertPdfResponse> {
+  try {
+    const token = await signJwt();
+    const url = `${import.meta.env.WXT_SERVER_URL}/pdf-to-html`;
+
+    // Convert base64 back to binary
+    const binaryString = atob(pdfBase64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    const blob = new Blob([bytes], { type: 'application/pdf' });
+
+    const formData = new FormData();
+    formData.append('file', blob, fileName);
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      if (res.status === 401) return { success: false, error: 'Authentication failed.' };
+      if (res.status === 422) return { success: false, error: 'Could not convert this file.' };
+      return { success: false, error: 'Server error, please try again.' };
+    }
+
+    const body = await res.json();
+    if (typeof body.html !== 'string' || !body.html.trim()) {
+      return { success: false, error: 'Server returned empty HTML.' };
+    }
+
+    return { success: true, html: body.html };
+  } catch (err) {
+    console.error('[convert-pdf] error:', err instanceof Error ? err.message : 'unknown');
+    return { success: false, error: 'Cannot reach server.' };
+  }
 }
 
 function isValidStepOutput(step: AgentStep, output: unknown): boolean {
@@ -81,6 +132,13 @@ export default defineBackground(() => {
         }),
       );
       return true; // Keep message channel open for async response
+    }
+
+    if (isConvertPdfMessage(message)) {
+      handleConvertPdf(message.pdfBase64, message.fileName)
+        .then((response) => sendResponse(response))
+        .catch(() => sendResponse({ success: false, error: 'Conversion failed' } satisfies ConvertPdfResponse));
+      return true;
     }
 
     if (isRunPipelineMessage(message)) {

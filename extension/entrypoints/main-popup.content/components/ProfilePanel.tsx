@@ -1,8 +1,9 @@
 import { useRef } from 'react';
-import { Check, X } from 'lucide-react';
+import { Check, X, Download, Loader2 } from 'lucide-react';
 import { FileDropzone } from './FileDropzone';
 import { FileUploaded } from './FileUploaded';
 import { useProfileForm, MAX_WORK_HISTORY_LENGTH } from '../hooks/useProfileForm';
+import { useDownloadHtml } from '../hooks/useDownloadHtml';
 import type { UserProfile } from '../../../types/storage';
 
 interface ProfilePanelProps {
@@ -19,12 +20,19 @@ export function ProfilePanel({ profile, onSave, onCancel }: ProfilePanelProps) {
     setWorkHistory,
     fileName,
     fileSize,
+    rawFile,
     handleFileSelect,
     handleSave,
     isSaving,
     error,
     isValid,
   } = useProfileForm(profile);
+
+  const {
+    downloadHtml,
+    isDownloading,
+    error: downloadError,
+  } = useDownloadHtml();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -78,6 +86,28 @@ export function ProfilePanel({ profile, onSave, onCancel }: ProfilePanelProps) {
           aria-hidden="true"
           tabIndex={-1}
         />
+        {rawFile && rawFile.name.endsWith('.pdf') && (
+          <button
+            type="button"
+            disabled={isDownloading}
+            onClick={() => downloadHtml(rawFile)}
+            className={`flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-surface-200 bg-white font-body text-xs font-medium text-surface-600 transition-colors hover:bg-surface-50 ${
+              isDownloading ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+          >
+            {isDownloading ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Download size={14} />
+            )}
+            {isDownloading ? 'Converting...' : 'Download HTML'}
+          </button>
+        )}
+        {downloadError && (
+          <p role="alert" className="font-body text-xs text-error-500">
+            {downloadError}
+          </p>
+        )}
       </div>
 
       {/* Work History section */}

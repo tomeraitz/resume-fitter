@@ -65,6 +65,7 @@ interface UseProfileFormReturn {
   setWorkHistory: (value: string) => void;
   fileName: string | null;
   fileSize: number | null;
+  rawFile: File | null;
   handleFileSelect: (file: File) => Promise<void>;
   handleSave: () => Promise<boolean>;
   isSaving: boolean;
@@ -77,6 +78,7 @@ export function useProfileForm(profile: UserProfile): UseProfileFormReturn {
   const [cvContent, setCvContent] = useState(profile.cvTemplate);
   const [fileName, setFileName] = useState<string | null>(profile.cvFileName ?? null);
   const [fileSize, setFileSize] = useState<number | null>(profile.cvFileSize ?? null);
+  const [rawFile, setRawFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -111,6 +113,7 @@ export function useProfileForm(profile: UserProfile): UseProfileFormReturn {
       setCvContent(html);
       setFileName(file.name);
       setFileSize(file.size);
+      setRawFile(file);
       setError(null);
     } catch (err) {
       console.error('[profile] File conversion failed:', err);
@@ -143,6 +146,7 @@ export function useProfileForm(profile: UserProfile): UseProfileFormReturn {
     setWorkHistory,
     fileName,
     fileSize,
+    rawFile,
     handleFileSelect,
     handleSave,
     isSaving,

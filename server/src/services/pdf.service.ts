@@ -1,8 +1,4 @@
-import { execFile } from "node:child_process";
-import { writeFile, unlink, readFile } from "node:fs/promises";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
-import { randomUUID } from "node:crypto";
+import { PDFParse } from "pdf-parse";
 
 export class PdfConversionError extends Error {
   constructor(message: string) {
@@ -12,48 +8,68 @@ export class PdfConversionError extends Error {
 }
 
 /**
- * Convert a PDF buffer to HTML using poppler's pdftohtml CLI.
- * Requires poppler-utils to be installed on the host system.
+ * Convert a PDF buffer to HTML using pdf-parse (pure JS, no external binaries).
+ *
+ * pdf-parse extracts plain text; we wrap each paragraph in a <p> tag
+ * so downstream consumers that expect HTML still get valid markup.
  */
 export async function convertPdfToHtml(pdfBuffer: Buffer): Promise<string> {
-  const id = randomUUID();
-  const tempDir = tmpdir();
-  const inputPath = join(tempDir, `${id}.pdf`);
-  const outputPath = join(tempDir, `${id}.html`);
-
-  await writeFile(inputPath, pdfBuffer);
+  let parser: PDFParse | undefined;
 
   try {
-    await runPdfToHtml(inputPath, outputPath);
-    const html = await readFile(outputPath, "utf-8");
-    return html;
+    parser = new PDFParse({ data: new Uint8Array(pdfBuffer) });
+    const result = await parser.getText();
+    const text = result.text;
+
+    if (!text || text.trim().length === 0) {
+      throw new PdfConversionError(
+        "PDF appears to contain no extractable text (possibly scanned/image-only)",
+      );
+    }
+
+    return textToHtml(text);
+  } catch (err) {
+    if (err instanceof PdfConversionError) throw err;
+
+    const message =
+      err instanceof Error ? err.message : "Unknown PDF parsing error";
+    throw new PdfConversionError(`PDF conversion failed: ${message}`);
   } finally {
-    // Best-effort cleanup — don't let failures here mask real errors
-    await unlink(inputPath).catch(() => {});
-    await unlink(outputPath).catch(() => {});
+    await parser?.destroy().catch(() => {});
   }
 }
 
-function runPdfToHtml(inputPath: string, outputPath: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    // -s: generate single HTML page
-    // -i: ignore images (we only need text/structure)
-    // -noframes: output single file instead of framed pages
-    execFile(
-      "pdftohtml",
-      ["-s", "-i", "-noframes", inputPath, outputPath],
-      { timeout: 30_000 },
-      (error, _stdout, stderr) => {
-        if (error) {
-          const msg =
-            error.killed
-              ? "PDF conversion timed out"
-              : `pdftohtml failed: ${stderr || error.message}`;
-          reject(new PdfConversionError(msg));
-          return;
-        }
-        resolve();
-      },
-    );
-  });
+/**
+ * Wrap plain text in minimal HTML structure.
+ * Each paragraph (separated by blank lines) becomes a <p> element.
+ * Consecutive non-blank lines within a paragraph are joined with <br>.
+ */
+function textToHtml(text: string): string {
+  const paragraphs = text.split(/\n{2,}/);
+
+  const body = paragraphs
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0)
+    .map((p) => {
+      const escaped = escapeHtml(p);
+      const withBreaks = escaped.replace(/\n/g, "<br>\n");
+      return `<p>${withBreaks}</p>`;
+    })
+    .join("\n");
+
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body>
+${body}
+</body>
+</html>`;
+}
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }

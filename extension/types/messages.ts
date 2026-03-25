@@ -20,6 +20,16 @@ interface OpenCvPreviewMessage {
   type: 'open-cv-preview';
 }
 
+interface ConvertPdfMessage {
+  type: 'convert-pdf';
+  pdfBase64: string;
+  fileName: string;
+}
+
+type ConvertPdfResponse =
+  | { success: true; html: string }
+  | { success: false; error: string };
+
 type ExtractJobResponse =
   | { success: true; job: ExtractedJobDetails }
   | { success: false; error: string; notJobPage?: boolean };
@@ -28,13 +38,16 @@ type ExtensionMessage =
   | RunPipelineMessage
   | CancelPipelineMessage
   | ExtractJobMessage
-  | OpenCvPreviewMessage;
+  | OpenCvPreviewMessage
+  | ConvertPdfMessage;
 
 export type {
   RunPipelineMessage,
   CancelPipelineMessage,
   ExtractJobMessage,
   OpenCvPreviewMessage,
+  ConvertPdfMessage,
+  ConvertPdfResponse,
   ExtractJobResponse,
   ExtensionMessage,
 };
