@@ -1,7 +1,5 @@
 # CV Output Full Page Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
-
 **Goal:** Add a full-page CV preview tab with split view (CV + chat shell) that opens when user clicks "Preview CV"
 
 **Architecture:** New WXT unlisted page entrypoint (`cv-preview.html`) reads pipeline session from storage. The popup sends a message to background to open the preview tab. Download/Cancel clear session and close tab.
