@@ -42,7 +42,7 @@ Wait for the user's confirmation or corrections before continuing. Do NOT procee
 
 ## Step 3 — Brainstorm
 
-Launch the **`superpowers:brainstorming`** skill via the `Skill` tool in the **background** with the following context passed to it:
+Brainstorm with the following context:
 
 - The feature description from Step 1
 - The classification and clarifications from Step 2

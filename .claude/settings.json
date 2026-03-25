@@ -16,7 +16,6 @@
     ]
   },
   "enabledPlugins": {
-    "superpowers@claude-plugins-official": true,
-    "context-mode@context-mode": true
+"context-mode@context-mode": true
   }
 }
