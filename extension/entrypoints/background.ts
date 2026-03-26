@@ -224,8 +224,13 @@ async function handleSSEEvent(
       await updateStepResult(nextStep, 'running');
     }
   } else if (eventType === 'done') {
+    console.log('[pipeline] "done" event received. finalCv type:', typeof data.finalCv, 'length:', typeof data.finalCv === 'string' ? data.finalCv.length : 'N/A');
     if (typeof data.finalCv === 'string' && data.finalCv.length <= 2_000_000) {
+      console.log('[pipeline] Calling setGeneratedCv...');
       await setGeneratedCv(data.finalCv);
+      console.log('[pipeline] setGeneratedCv completed. Session should now be "completed".');
+    } else {
+      console.warn('[pipeline] "done" event missing or invalid finalCv. data keys:', Object.keys(data));
     }
   } else if (eventType === 'error') {
     await setPipelineStatus('error');
@@ -310,6 +315,7 @@ async function handleRunPipeline(
         } else if (line.startsWith('data: ') && eventType) {
           try {
             const data = JSON.parse(line.slice(6));
+            console.log(`[pipeline] SSE event="${eventType}"`, data);
             await handleSSEEvent(eventType, data);
           } catch (parseErr) {
             console.warn('Skipping malformed SSE data:', parseErr);
@@ -318,6 +324,31 @@ async function handleRunPipeline(
         }
       }
     }
+
+    // Flush remaining buffer — the stream may close without a trailing newline,
+    // leaving the final "data: ..." line unprocessed.
+    if (buffer.trim()) {
+      console.log('[pipeline] Flushing remaining SSE buffer:', buffer);
+      const remainingLines = buffer.split('\n');
+      for (const line of remainingLines) {
+        if (line.startsWith('event: ')) {
+          eventType = line.slice(7).trim();
+        } else if (line.startsWith('data: ') && eventType) {
+          try {
+            const data = JSON.parse(line.slice(6));
+            console.log(`[pipeline] SSE (flushed) event="${eventType}"`, data);
+            await handleSSEEvent(eventType, data);
+          } catch (parseErr) {
+            console.warn('Skipping malformed SSE data in buffer flush:', parseErr);
+          }
+          eventType = '';
+        }
+      }
+    }
+
+    // Log final session state after stream processing
+    const finalSession = await pipelineSession.getValue();
+    console.log('[pipeline] Stream ended. Final session status:', finalSession.status, 'generatedCv present:', !!finalSession.generatedCv);
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') {
       console.info('Pipeline stream aborted.');

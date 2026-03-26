@@ -66,13 +66,18 @@ export async function runPipeline(
     atsScannerResult.updatedCvHtml,
     request.history,
   );
-  const verifierStep: AgentResult = { step: 4, name: "verifier", output: verifierResult, durationMs: Date.now() - verifierStart };
+  // Omit verifiedCv from the step event — it's sent separately in the "done"
+  // event as finalCv.  Duplicating it would bloat the session storage and can
+  // push Chrome's storage.session over its quota, silently dropping the write.
+  const verifierStepOutput = { flaggedClaims: verifierResult.flaggedClaims };
+  const verifierStep: AgentResult = { step: 4, name: "verifier", output: verifierStepOutput, durationMs: Date.now() - verifierStart };
   steps.push(verifierStep);
   onStepComplete?.(verifierStep);
   console.log(`[pipeline] step 4/4: verifier done (${verifierStep.durationMs}ms)`);
 
   const totalMs = hmStep.durationMs + rrStep.durationMs + atsStep.durationMs + verifierStep.durationMs;
   console.log(`[pipeline] complete (${totalMs}ms total)`);
+  console.log(`[pipeline] returning finalCv — len=${verifierResult.verifiedCv?.length ?? 0} type=${typeof verifierResult.verifiedCv}`);
 
   return { steps, finalCv: verifierResult.verifiedCv };
 }

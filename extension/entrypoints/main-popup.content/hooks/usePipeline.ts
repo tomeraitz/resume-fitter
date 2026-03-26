@@ -42,20 +42,27 @@ function deriveCurrentStep(steps: StepsRecord): number {
 }
 
 function deriveResults(session: typeof EMPTY_SESSION): PipelineResults | null {
-  if (session.status !== 'completed' || !session.generatedCv) return null;
+  if (session.status !== 'completed' || !session.generatedCv) {
+    console.log('[deriveResults] Blocked: status=', session.status, 'generatedCv=', !!session.generatedCv);
+    return null;
+  }
 
   const hmData = session.steps['hiring-manager'].data;
   const atsData = session.steps['ats-scanner'].data;
   const verData = session.steps['verifier'].data;
+
+  console.log('[deriveResults] Step data — hm:', hmData?.step, 'ats:', atsData?.step, 'ver:', verData?.step);
 
   if (
     hmData?.step !== 'hiring-manager' ||
     atsData?.step !== 'ats-scanner' ||
     verData?.step !== 'verifier'
   ) {
+    console.warn('[deriveResults] Step data mismatch — returning null');
     return null;
   }
 
+  console.log('[deriveResults] Returning valid results');
   return {
     matchScore: hmData.matchScore,
     atsScore: atsData.atsScore,

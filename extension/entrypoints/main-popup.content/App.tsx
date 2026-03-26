@@ -96,10 +96,13 @@ export function App() {
 
   // Pipeline state transitions
   useEffect(() => {
+    console.log('[App] Pipeline transition check — view:', view, 'pipelineStatus:', pipelineStatus, 'pipelineResults:', !!pipelineResults);
     if (view === 'pipeline' && pipelineStatus === 'completed' && pipelineResults) {
+      console.log('[App] Transitioning to pipeline-done');
       setView('pipeline-done');
     }
     if (view === 'pipeline' && pipelineStatus === 'error') {
+      console.log('[App] Pipeline errored, transitioning to initial');
       setView('initial');
     }
   }, [view, pipelineStatus, pipelineResults]);

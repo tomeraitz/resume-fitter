@@ -20,6 +20,7 @@ export function usePipelineSession() {
       for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
         try {
           unwatchFn = pipelineSession.watch((newVal) => {
+            console.log('[usePipelineSession] watch fired — status:', newVal?.status, 'generatedCv:', !!newVal?.generatedCv, 'steps:', newVal ? Object.entries(newVal.steps).map(([k, v]) => `${k}:${v.status}`).join(', ') : 'null');
             initialized = true;
             if (!cancelled) {
               setSession(newVal);

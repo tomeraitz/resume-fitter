@@ -26,11 +26,19 @@ pipelineRouter.post("/", requireAuth, rateLimiter, async (req, res) => {
   res.flushHeaders();
 
   let clientDisconnected = false;
-  res.on('close', () => { clientDisconnected = true; });
+  res.on('close', () => {
+    console.log('[pipeline:sse] client disconnected (close event fired)');
+    clientDisconnected = true;
+  });
 
   const onStepComplete = (step: AgentResult): void => {
-    if (clientDisconnected) return;
-    res.write(`event: step\ndata: ${JSON.stringify(step)}\n\n`);
+    if (clientDisconnected) {
+      console.warn(`[pipeline:sse] client disconnected, skipping step ${step.step} (${step.name})`);
+      return;
+    }
+    const payload = JSON.stringify(step);
+    console.log(`[pipeline:sse] sending step event: step=${step.step} name=${step.name} payloadLen=${payload.length}`);
+    res.write(`event: step\ndata: ${payload}\n\n`);
   };
 
   // Keep the SSE stream active so Chrome doesn't suspend the MV3 service worker
@@ -40,18 +48,29 @@ pipelineRouter.post("/", requireAuth, rateLimiter, async (req, res) => {
 
   try {
     const result = await runPipeline(parsed.data, onStepComplete);
+    console.log(`[pipeline:sse] runPipeline returned. clientDisconnected=${clientDisconnected} finalCv type=${typeof result.finalCv} len=${result.finalCv?.length ?? 'N/A'}`);
     if (!clientDisconnected) {
-      res.write(`event: done\ndata: ${JSON.stringify({ finalCv: result.finalCv })}\n\n`);
+      const donePayload = JSON.stringify({ finalCv: result.finalCv });
+      console.log(`[pipeline:sse] sending done event: finalCvLen=${result.finalCv?.length ?? 0} payloadLen=${donePayload.length}`);
+      const writeOk = res.write(`event: done\ndata: ${donePayload}\n\n`);
+      console.log(`[pipeline:sse] done event res.write returned: ${writeOk}`);
+    } else {
+      console.warn("[pipeline:sse] client disconnected before done event could be sent");
     }
   } catch (err) {
+    console.error("[pipeline:sse] pipeline error caught:", err);
     if (!clientDisconnected) {
       let message = "Pipeline failed";
       if (err instanceof SyntaxError) message = "Model returned invalid JSON";
       else if (err instanceof ZodError) message = "Model returned unexpected schema";
+      console.error(`[pipeline:sse] sending error event: ${message}`);
       res.write(`event: error\ndata: ${JSON.stringify({ error: message })}\n\n`);
+    } else {
+      console.warn("[pipeline:sse] client disconnected, cannot send error event");
     }
   } finally {
     clearInterval(keepalive);
+    console.log("[pipeline:sse] ending SSE response stream");
     res.end();
   }
 });
