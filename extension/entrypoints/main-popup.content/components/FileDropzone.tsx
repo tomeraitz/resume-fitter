@@ -65,12 +65,12 @@ export function FileDropzone({ onFileSelect }: FileDropzoneProps) {
         Drop your CV here or click to browse
       </span>
       <span className="font-body text-[11px] text-surface-400">
-        PDF, DOCX up to 2MB
+        PDF up to 2MB
       </span>
       <input
         ref={inputRef}
         type="file"
-        accept=".pdf,.docx"
+        accept=".pdf"
         onChange={handleChange}
         className="hidden"
         aria-hidden="true"

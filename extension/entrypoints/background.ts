@@ -28,6 +28,7 @@ function isConvertPdfMessage(msg: unknown): msg is { type: 'convert-pdf'; pdfBas
     m.type === 'convert-pdf' &&
     typeof m.pdfBase64 === 'string' &&
     m.pdfBase64.length > 0 &&
+    m.pdfBase64.length <= 4_000_000 &&
     typeof m.fileName === 'string'
   );
 }
@@ -45,8 +46,13 @@ async function handleConvertPdf(pdfBase64: string, fileName: string): Promise<Co
     }
     const blob = new Blob([bytes], { type: 'application/pdf' });
 
+    if (blob.size > 2 * 1024 * 1024) {
+      return { success: false, error: 'File too large' };
+    }
+
+    const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 255);
     const formData = new FormData();
-    formData.append('file', blob, fileName);
+    formData.append('file', blob, safeName);
 
     const res = await fetch(url, {
       method: 'POST',

@@ -58,12 +58,15 @@ export async function convertPdfToHtml(pdfBuffer: Buffer): Promise<string> {
           .map((link) => {
             const [x0, y0, x1, y1] = link.getBounds();
             const uri = link.getURI();
+            const safeHref = sanitizeUri(uri);
+            if (!safeHref) return "";
             const lx = x0 - bounds[0];
             const ly = y0 - bounds[1];
             const lw = x1 - x0;
             const lh = y1 - y0;
-            return `<a href="${escapeAttr(uri)}" target="_blank" rel="noopener noreferrer" style="position:absolute;left:${lx}px;top:${ly}px;width:${lw}px;height:${lh}px;display:block"></a>`;
+            return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer" style="position:absolute;left:${lx}px;top:${ly}px;width:${lw}px;height:${lh}px;display:block"></a>`;
           })
+          .filter(Boolean)
           .join("\n");
         if (anchors) {
           linkOverlay = `\n<div class="pdf-links" style="position:absolute;top:0;left:0;width:100%;height:100%">\n${anchors}\n</div>`;
@@ -91,6 +94,24 @@ function escapeAttr(value: string): string {
     .replace(/"/g, "&quot;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
+}
+
+const SAFE_PROTOCOLS = new Set(["http:", "https:", "mailto:"]);
+
+/**
+ * Sanitize a URI from a PDF link annotation to prevent XSS via
+ * dangerous schemes (e.g. javascript:, data:, vbscript:).
+ * Returns the HTML-attribute-escaped URI if the scheme is safe,
+ * or an empty string if the URI is invalid or uses a blocked scheme.
+ */
+function sanitizeUri(uri: string): string {
+  try {
+    const parsed = new URL(uri);
+    if (!SAFE_PROTOCOLS.has(parsed.protocol)) return "";
+  } catch {
+    return "";
+  }
+  return escapeAttr(uri);
 }
 
 function buildHtml(pages: string[]): string {

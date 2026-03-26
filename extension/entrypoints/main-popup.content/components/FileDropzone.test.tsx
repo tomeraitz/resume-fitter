@@ -6,7 +6,7 @@ describe('FileDropzone', () => {
   it('renders upload icon and instructional text', () => {
     render(<FileDropzone onFileSelect={vi.fn()} />);
     expect(screen.getByText('Drop your CV here or click to browse')).toBeInTheDocument();
-    expect(screen.getByText('PDF, DOCX up to 2MB')).toBeInTheDocument();
+    expect(screen.getByText('PDF up to 2MB')).toBeInTheDocument();
   });
 
   it('has correct accessibility attributes', () => {
@@ -18,7 +18,7 @@ describe('FileDropzone', () => {
   it('hidden file input has correct accept attribute', () => {
     const { container } = render(<FileDropzone onFileSelect={vi.fn()} />);
     const input = container.querySelector('input[type="file"]') as HTMLInputElement;
-    expect(input).toHaveAttribute('accept', '.pdf,.docx');
+    expect(input).toHaveAttribute('accept', '.pdf');
     expect(input).toHaveAttribute('aria-hidden', 'true');
     expect(input).toHaveAttribute('tabindex', '-1');
   });

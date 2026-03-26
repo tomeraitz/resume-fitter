@@ -24,6 +24,7 @@ export function ProfilePanel({ profile, onSave, onCancel }: ProfilePanelProps) {
     handleFileSelect,
     handleSave,
     isSaving,
+    isConverting,
     error,
     isValid,
   } = useProfileForm(profile);
@@ -41,7 +42,7 @@ export function ProfilePanel({ profile, onSave, onCancel }: ProfilePanelProps) {
   const title = isEditMode ? 'Edit profile' : 'Profile setup';
   const showCharCounter =
     workHistory.length > MAX_WORK_HISTORY_LENGTH * CHAR_WARNING_THRESHOLD;
-  const isSaveDisabled = !isValid || isSaving;
+  const isSaveDisabled = !isValid || isSaving || isConverting;
 
   const handleSaveClick = async () => {
     const succeeded = await handleSave();
@@ -80,11 +81,12 @@ export function ProfilePanel({ profile, onSave, onCancel }: ProfilePanelProps) {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".pdf,.docx"
+          accept=".pdf"
           onChange={handleHiddenFileChange}
           className="hidden"
           aria-hidden="true"
           tabIndex={-1}
+          disabled={isConverting}
         />
         {rawFile && rawFile.name.endsWith('.pdf') && (
           <button
@@ -107,6 +109,12 @@ export function ProfilePanel({ profile, onSave, onCancel }: ProfilePanelProps) {
           <p role="alert" className="font-body text-xs text-error-500">
             {downloadError}
           </p>
+        )}
+        {isConverting && (
+          <div className="flex items-center gap-2 font-body text-xs text-surface-500">
+            <Loader2 size={14} className="animate-spin" />
+            Converting PDF...
+          </div>
         )}
       </div>
 

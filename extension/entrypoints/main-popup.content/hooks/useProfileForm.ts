@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { userProfile } from '../../../services/storage';
 import type { UserProfile } from '../../../types/storage';
-import { pdfToHtml, docxToHtml } from '../../../utils/fileToHtml';
+import type { ConvertPdfResponse } from '../../../types/messages';
+import { fileToBase64 } from '../utils/fileToBase64';
 
 const ACCEPTED_TYPES = new Map([
   ['.pdf', 'application/pdf'],
-  ['.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
 ]);
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
@@ -14,7 +14,6 @@ const MAX_WORK_HISTORY_LENGTH = 5000;
 
 const FILE_SIGNATURES: Record<string, number[]> = {
   '.pdf': [0x25, 0x50, 0x44, 0x46],
-  '.docx': [0x50, 0x4b, 0x03, 0x04],
 };
 
 function getFileExtension(fileName: string): string | null {
@@ -26,7 +25,7 @@ function getFileExtension(fileName: string): string | null {
 function validateFile(file: File): string | null {
   const ext = getFileExtension(file.name);
   if (!ext || !ACCEPTED_TYPES.has(ext) || file.type !== ACCEPTED_TYPES.get(ext)) {
-    return 'Please upload a PDF or DOCX file.';
+    return 'Please upload a PDF file.';
   }
   if (file.size === 0) {
     return 'File is empty.';
@@ -44,19 +43,12 @@ function validateFileContent(buffer: ArrayBuffer, ext: string): boolean {
   return signature.every((byte, i) => header[i] === byte);
 }
 
-function readFileAs<T extends 'arraybuffer' | 'dataurl'>(
-  file: File,
-  mode: T,
-): Promise<T extends 'arraybuffer' ? ArrayBuffer : string> {
+function readFileAsArrayBuffer(file: File): Promise<ArrayBuffer> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as T extends 'arraybuffer' ? ArrayBuffer : string);
+    reader.onload = () => resolve(reader.result as ArrayBuffer);
     reader.onerror = () => reject(new Error('Failed to read file.'));
-    if (mode === 'arraybuffer') {
-      reader.readAsArrayBuffer(file);
-    } else {
-      reader.readAsDataURL(file);
-    }
+    reader.readAsArrayBuffer(file);
   });
 }
 
@@ -69,6 +61,7 @@ interface UseProfileFormReturn {
   handleFileSelect: (file: File) => Promise<void>;
   handleSave: () => Promise<boolean>;
   isSaving: boolean;
+  isConverting: boolean;
   error: string | null;
   isValid: boolean;
 }
@@ -80,6 +73,7 @@ export function useProfileForm(profile: UserProfile): UseProfileFormReturn {
   const [fileSize, setFileSize] = useState<number | null>(profile.cvFileSize ?? null);
   const [rawFile, setRawFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const isValid =
@@ -97,15 +91,34 @@ export function useProfileForm(profile: UserProfile): UseProfileFormReturn {
     const ext = getFileExtension(file.name)!;
 
     try {
-      const buffer = await readFileAs(file, 'arraybuffer');
+      const buffer = await readFileAsArrayBuffer(file);
       if (!validateFileContent(buffer, ext)) {
-        setError('File appears to be corrupted or is not a valid PDF/DOCX.');
+        setError('File appears to be corrupted or is not a valid PDF.');
         return;
       }
-      const html = ext === '.pdf'
-        ? await pdfToHtml(buffer)
-        : await docxToHtml(buffer);
-      console.log('[profile] Converted CV to HTML. Length:', html.length, 'Preview:', html.slice(0, 500));
+    } catch {
+      setError('Failed to read file.');
+      return;
+    }
+
+    setIsConverting(true);
+    try {
+      const pdfBase64 = await fileToBase64(file);
+      const raw: unknown = await browser.runtime.sendMessage({
+        type: 'convert-pdf',
+        pdfBase64,
+        fileName: file.name,
+      });
+      if (typeof raw !== 'object' || raw === null || !('success' in raw)) {
+        setError('Unexpected response from background script.');
+        return;
+      }
+      const response = raw as ConvertPdfResponse;
+      if (!response.success) {
+        setError(response.error);
+        return;
+      }
+      const html = response.html;
       if (!html.trim()) {
         setError('Could not extract content from file.');
         return;
@@ -115,9 +128,17 @@ export function useProfileForm(profile: UserProfile): UseProfileFormReturn {
       setFileSize(file.size);
       setRawFile(file);
       setError(null);
-    } catch (err) {
-      console.error('[profile] File conversion failed:', err);
-      setError('Failed to read file.');
+
+      // Open converted HTML in new tab for visual verification
+      const safeHtml = `<!DOCTYPE html><html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data: blob:;"></head><body>${html}</body></html>`;
+      const blob = new Blob([safeHtml], { type: 'text/html' });
+      const blobUrl = URL.createObjectURL(blob);
+      window.open(blobUrl, '_blank');
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+    } catch {
+      setError('Cannot reach server.');
+    } finally {
+      setIsConverting(false);
     }
   };
 
@@ -150,6 +171,7 @@ export function useProfileForm(profile: UserProfile): UseProfileFormReturn {
     handleFileSelect,
     handleSave,
     isSaving,
+    isConverting,
     error,
     isValid,
   };

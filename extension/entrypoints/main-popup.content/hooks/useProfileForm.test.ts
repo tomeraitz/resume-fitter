@@ -6,7 +6,6 @@ import {
   createProfile,
   createMockFile,
   PDF_MAGIC,
-  DOCX_MAGIC,
 } from './useProfileForm.test-utils';
 
 vi.mock('../../../services/storage', () => ({
@@ -15,10 +14,27 @@ vi.mock('../../../services/storage', () => ({
   },
 }));
 
+vi.mock('../utils/fileToBase64', () => ({
+  fileToBase64: vi.fn().mockResolvedValue('base64-pdf-data'),
+}));
+
 describe('useProfileForm', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockSetValue.mockResolvedValue(undefined);
+
+    // Mock browser.runtime.sendMessage for convert-pdf calls
+    vi.stubGlobal('browser', {
+      runtime: {
+        sendMessage: vi.fn().mockResolvedValue({
+          success: true,
+          html: '<p>converted</p>',
+        }),
+      },
+    });
+
+    // Mock window.open (hook opens converted HTML in new tab)
+    vi.stubGlobal('open', vi.fn());
   });
 
   describe('initialization', () => {
@@ -110,23 +126,6 @@ describe('useProfileForm', () => {
       expect(result.current.error).toBeNull();
     });
 
-    it('with valid DOCX sets file state', async () => {
-      const { result } = renderHook(() => useProfileForm(createProfile()));
-      const file = createMockFile(
-        'resume.docx',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        DOCX_MAGIC,
-      );
-
-      await act(async () => {
-        await result.current.handleFileSelect(file);
-      });
-
-      expect(result.current.fileName).toBe('resume.docx');
-      expect(result.current.fileSize).toBe(file.size);
-      expect(result.current.error).toBeNull();
-    });
-
     it('with invalid type sets error', async () => {
       const { result } = renderHook(() => useProfileForm(createProfile()));
       const file = createMockFile('notes.txt', 'text/plain');
@@ -135,7 +134,7 @@ describe('useProfileForm', () => {
         await result.current.handleFileSelect(file);
       });
 
-      expect(result.current.error).toBe('Please upload a PDF or DOCX file.');
+      expect(result.current.error).toBe('Please upload a PDF file.');
     });
 
     it('with oversized file sets error', async () => {
@@ -155,7 +154,7 @@ describe('useProfileForm', () => {
       await act(async () => {
         await result.current.handleFileSelect(createMockFile('notes.txt', 'text/plain'));
       });
-      expect(result.current.error).toBe('Please upload a PDF or DOCX file.');
+      expect(result.current.error).toBe('Please upload a PDF file.');
 
       await act(async () => {
         await result.current.handleFileSelect(
@@ -174,7 +173,7 @@ describe('useProfileForm', () => {
         await result.current.handleFileSelect(file);
       });
 
-      expect(result.current.error).toBe('Please upload a PDF or DOCX file.');
+      expect(result.current.error).toBe('Please upload a PDF file.');
     });
 
     it('with invalid magic bytes rejects file', async () => {
@@ -187,7 +186,7 @@ describe('useProfileForm', () => {
       });
 
       expect(result.current.error).toBe(
-        'File appears to be corrupted or is not a valid PDF/DOCX.',
+        'File appears to be corrupted or is not a valid PDF.',
       );
     });
 
