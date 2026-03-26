@@ -250,7 +250,7 @@ async function handleRunPipeline(
   currentAbort = new AbortController();
 
   const signal = typeof AbortSignal.any === 'function'
-    ? AbortSignal.any([currentAbort.signal, AbortSignal.timeout(300_000)])
+    ? AbortSignal.any([currentAbort.signal, AbortSignal.timeout(600_000)])
     : currentAbort.signal;
 
   try {
