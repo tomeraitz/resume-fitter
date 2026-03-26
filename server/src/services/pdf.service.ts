@@ -8,15 +8,12 @@ export class PdfConversionError extends Error {
 }
 
 /**
- * Convert a PDF buffer to high-fidelity HTML using MuPDF's WASM engine.
+ * Convert a PDF buffer to compact, styled HTML using MuPDF's structured text.
  *
- * Each page is rendered to SVG via MuPDF's DocumentWriter, which processes
- * the full page rendering pipeline — preserving backgrounds, lines, shapes,
- * colors, fonts, images, and all visual decorations. The SVGs are then
- * wrapped in an HTML document.
- *
- * This approach produces output that closely mirrors the original PDF's
- * visual appearance, unlike text-only extraction methods.
+ * Uses toStructuredText().asHTML() which preserves font names, sizes, colors,
+ * bold/italic styling, and positioned layout — while producing compact output
+ * (~16KB per page vs ~472KB for SVG). Link annotations are extracted separately
+ * and overlaid as clickable anchors.
  */
 export async function convertPdfToHtml(pdfBuffer: Buffer): Promise<string> {
   try {
@@ -31,7 +28,7 @@ export async function convertPdfToHtml(pdfBuffer: Buffer): Promise<string> {
       throw new PdfConversionError("PDF contains no pages");
     }
 
-    const pageSvgs: string[] = [];
+    const pageHtmls: string[] = [];
 
     for (let i = 0; i < totalPages; i++) {
       const page = doc.loadPage(i);
@@ -39,15 +36,8 @@ export async function convertPdfToHtml(pdfBuffer: Buffer): Promise<string> {
       const width = bounds[2] - bounds[0];
       const height = bounds[3] - bounds[1];
 
-      // Render page to SVG via DocumentWriter (captures ALL visual elements)
-      const outBuf = new mupdf.Buffer();
-      const writer = new mupdf.DocumentWriter(outBuf, "svg", "");
-      const device = writer.beginPage([bounds[0], bounds[1], bounds[2], bounds[3]]);
-      page.run(device, mupdf.Matrix.identity);
-      writer.endPage();
-      writer.close();
-
-      const svgContent = outBuf.asString();
+      const stext = page.toStructuredText("preserve-whitespace");
+      const stextHtml = stext.asHTML(i);
 
       // Extract link annotations and build transparent overlay anchors
       const links = page.getLinks();
@@ -64,21 +54,21 @@ export async function convertPdfToHtml(pdfBuffer: Buffer): Promise<string> {
             const ly = y0 - bounds[1];
             const lw = x1 - x0;
             const lh = y1 - y0;
-            return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer" style="position:absolute;left:${lx}px;top:${ly}px;width:${lw}px;height:${lh}px;display:block"></a>`;
+            return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer" style="position:absolute;left:${lx}pt;top:${ly}pt;width:${lw}pt;height:${lh}pt;display:block;z-index:1"></a>`;
           })
           .filter(Boolean)
           .join("\n");
         if (anchors) {
-          linkOverlay = `\n<div class="pdf-links" style="position:absolute;top:0;left:0;width:100%;height:100%">\n${anchors}\n</div>`;
+          linkOverlay = `\n${anchors}`;
         }
       }
 
-      pageSvgs.push(
-        `<div class="pdf-page" style="position:relative;width:${Math.round(width)}px;height:${Math.round(height)}px;margin:0 auto 20px;overflow:hidden">\n${svgContent}${linkOverlay}\n</div>`,
+      pageHtmls.push(
+        `<div class="pdf-page" style="position:relative;width:${Math.round(width)}pt;height:${Math.round(height)}pt;margin:0 auto 20px;overflow:hidden">\n${stextHtml}${linkOverlay}\n</div>`,
       );
     }
 
-    return buildHtml(pageSvgs);
+    return buildHtml(pageHtmls);
   } catch (err) {
     if (err instanceof PdfConversionError) throw err;
 
@@ -120,11 +110,15 @@ function buildHtml(pages: string[]): string {
 <head>
 <meta charset="utf-8">
 <style>
-body { background: #f5f5f5; margin: 0; padding: 20px; }
+body { background: #f5f5f5; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
 .pdf-page { background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.15); position: relative; }
-.pdf-page svg { display: block; width: 100%; height: auto; }
-.pdf-links { z-index: 1; }
-.pdf-links a { cursor: pointer; }
+.pdf-page > div { position: relative; width: 100%; height: 100%; }
+.pdf-page p { position: absolute; margin: 0; white-space: pre-wrap; }
+.pdf-page a { cursor: pointer; }
+@media print {
+  body { background: white; padding: 0; }
+  .pdf-page { box-shadow: none; margin: 0; page-break-after: always; }
+}
 </style>
 </head>
 <body>
