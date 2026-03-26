@@ -128,13 +128,6 @@ export function useProfileForm(profile: UserProfile): UseProfileFormReturn {
       setFileSize(file.size);
       setRawFile(file);
       setError(null);
-
-      // Open converted HTML in new tab for visual verification
-      const safeHtml = `<!DOCTYPE html><html><head><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data: blob:;"></head><body>${html}</body></html>`;
-      const blob = new Blob([safeHtml], { type: 'text/html' });
-      const blobUrl = URL.createObjectURL(blob);
-      window.open(blobUrl, '_blank');
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
     } catch {
       setError('Cannot reach server.');
     } finally {

@@ -31,3 +31,4 @@ pnpm-debug.log*
 .claude/prevent_sleep.ps1
 .claude/allow_sleep.ps1
 .mcp.json
+cv.html
