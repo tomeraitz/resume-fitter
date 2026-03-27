@@ -115,7 +115,7 @@ export function App() {
 
   const handleCancelExtraction = () => {
     cancelExtraction();
-    browser.runtime.sendMessage({ type: 'cancel-extraction' });
+    browser.runtime.sendMessage({ type: 'cancel-extraction' }).catch(() => {});
     setView('initial');
   };
 
@@ -136,8 +136,8 @@ export function App() {
 
   const handleReviewCv = () => {
     if (!pipelineResults?.finalCv) return;
-    browser.runtime.sendMessage({ type: 'open-cv-preview' });
-    browser.runtime.sendMessage({ type: 'close-popup' });
+    browser.runtime.sendMessage({ type: 'open-cv-preview' }).catch(() => {});
+    browser.runtime.sendMessage({ type: 'close-popup' }).catch(() => {});
   };
 
   const handleExtractAgain = () => {
@@ -151,7 +151,7 @@ export function App() {
   const handleSaveProfile = () => setView('initial');
 
   const handleClose = () => {
-    browser.runtime.sendMessage({ type: 'close-popup' });
+    browser.runtime.sendMessage({ type: 'close-popup' }).catch(() => {});
   };
 
   return (

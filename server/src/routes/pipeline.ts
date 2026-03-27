@@ -9,7 +9,7 @@ export const pipelineRouter = Router();
 
 const PipelineRequestSchema = z.object({
   jobDescription: z.string().min(1).max(50_000),
-  cvTemplate: z.string().min(1).max(100_000),
+  cvTemplate: z.string().min(1).max(1_000_000),
   history: z.string().max(100_000).optional(),
 });
 
