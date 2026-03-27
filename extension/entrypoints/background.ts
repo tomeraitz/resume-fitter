@@ -97,6 +97,22 @@ function isValidStepOutput(step: AgentStep, output: unknown): boolean {
 
 let currentAbort: AbortController | null = null;
 let pipelineRunning = false;
+let keepAliveInterval: ReturnType<typeof setInterval> | null = null;
+
+function startKeepAlive() {
+  stopKeepAlive();
+  // Ping every 25s to prevent MV3 service worker from being killed (30s idle limit)
+  keepAliveInterval = setInterval(() => {
+    browser.runtime.getPlatformInfo().catch(() => {});
+  }, 25_000);
+}
+
+function stopKeepAlive() {
+  if (keepAliveInterval) {
+    clearInterval(keepAliveInterval);
+    keepAliveInterval = null;
+  }
+}
 
 export default defineBackground(() => {
   browser.storage.session
@@ -155,6 +171,7 @@ export default defineBackground(() => {
     }
 
     if (isCancelMessage(message)) {
+      stopKeepAlive();
       currentAbort?.abort();
       clearPipelineSession();
       return true;
@@ -253,6 +270,7 @@ async function handleRunPipeline(
     ? AbortSignal.any([currentAbort.signal, AbortSignal.timeout(600_000)])
     : currentAbort.signal;
 
+  startKeepAlive();
   try {
     const profile = await userProfile.getValue();
 
@@ -357,6 +375,7 @@ async function handleRunPipeline(
     console.error('[pipeline] Pipeline failed:', err);
     await setPipelineStatus('error');
   } finally {
+    stopKeepAlive();
     currentAbort = null;
     pipelineRunning = false;
   }
