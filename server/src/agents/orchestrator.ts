@@ -46,34 +46,34 @@ export async function runPipeline(
   onStepComplete?.(rrStep);
   console.log(`[pipeline] step 2/4: rewrite-resume done (${rrStep.durationMs}ms)`);
 
-  console.log("[pipeline] step 3/4: ats-scanner");
-  const atsScannerStart = Date.now();
-  const atsScannerResult = await runAtsScanner(
-    modelService,
-    rewriteResumeResult.updatedCvHtml,
-    hiringManagerResult.cvLanguage,
-    request.jobDescription,
-  );
-  const atsStep: AgentResult = { step: 3, name: "ats-scanner", output: atsScannerResult, durationMs: Date.now() - atsScannerStart };
-  steps.push(atsStep);
-  onStepComplete?.(atsStep);
-  console.log(`[pipeline] step 3/4: ats-scanner done (${atsStep.durationMs}ms)`);
-
-  console.log("[pipeline] step 4/4: verifier");
+  console.log("[pipeline] step 3/4: verifier");
   const verifierStart = Date.now();
   const verifierResult = await runVerifier(
     modelService,
-    atsScannerResult.updatedCvHtml,
+    rewriteResumeResult.updatedCvHtml,
     request.history,
   );
   // Omit verifiedCv from the step event — it's sent separately in the "done"
   // event as finalCv.  Duplicating it would bloat the session storage and can
   // push Chrome's storage.session over its quota, silently dropping the write.
   const verifierStepOutput = { flaggedClaims: verifierResult.flaggedClaims };
-  const verifierStep: AgentResult = { step: 4, name: "verifier", output: verifierStepOutput, durationMs: Date.now() - verifierStart };
+  const verifierStep: AgentResult = { step: 3, name: "verifier", output: verifierStepOutput, durationMs: Date.now() - verifierStart };
   steps.push(verifierStep);
   onStepComplete?.(verifierStep);
-  console.log(`[pipeline] step 4/4: verifier done (${verifierStep.durationMs}ms)`);
+  console.log(`[pipeline] step 3/4: verifier done (${verifierStep.durationMs}ms)`);
+
+  console.log("[pipeline] step 4/4: ats-scanner (analysis only)");
+  const atsScannerStart = Date.now();
+  const atsScannerResult = await runAtsScanner(
+    modelService,
+    verifierResult.verifiedCv,
+    hiringManagerResult.cvLanguage,
+    request.jobDescription,
+  );
+  const atsStep: AgentResult = { step: 4, name: "ats-scanner", output: atsScannerResult, durationMs: Date.now() - atsScannerStart };
+  steps.push(atsStep);
+  onStepComplete?.(atsStep);
+  console.log(`[pipeline] step 4/4: ats-scanner done (${atsStep.durationMs}ms)`);
 
   const totalMs = hmStep.durationMs + rrStep.durationMs + atsStep.durationMs + verifierStep.durationMs;
   console.log(`[pipeline] complete (${totalMs}ms total)`);

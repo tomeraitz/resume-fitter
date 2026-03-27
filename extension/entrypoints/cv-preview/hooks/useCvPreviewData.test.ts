@@ -32,16 +32,6 @@ vi.mock('../../../services/storage', () => {
           keywordsNotAdded: [],
         },
       },
-      'ats-scanner': {
-        step: 'ats-scanner',
-        status: 'completed',
-        data: {
-          step: 'ats-scanner',
-          atsScore: 87,
-          problemAreas: [],
-          updatedCvHtml: '<html>ats</html>',
-        },
-      },
       'verifier': {
         step: 'verifier',
         status: 'completed',
@@ -49,6 +39,15 @@ vi.mock('../../../services/storage', () => {
           step: 'verifier',
           verifiedCv: '<html>verified</html>',
           flaggedClaims: [],
+        },
+      },
+      'ats-scanner': {
+        step: 'ats-scanner',
+        status: 'completed',
+        data: {
+          step: 'ats-scanner',
+          atsScore: 87,
+          problemAreas: [],
         },
       },
     },
@@ -78,8 +77,8 @@ vi.mock('../../../services/storage', () => {
       steps: {
         'hiring-manager': { step: 'hiring-manager', status: 'pending' },
         'rewrite-resume': { step: 'rewrite-resume', status: 'pending' },
-        'ats-scanner': { step: 'ats-scanner', status: 'pending' },
         'verifier': { step: 'verifier', status: 'pending' },
+        'ats-scanner': { step: 'ats-scanner', status: 'pending' },
       },
       extractedJob: undefined,
       generatedCv: null,

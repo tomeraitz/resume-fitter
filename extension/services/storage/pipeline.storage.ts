@@ -4,8 +4,8 @@ import type { PipelineSession, StepsRecord } from '../../types/pipeline';
 const EMPTY_STEPS: StepsRecord = {
   'hiring-manager': { step: 'hiring-manager', status: 'pending' },
   'rewrite-resume': { step: 'rewrite-resume', status: 'pending' },
-  'ats-scanner': { step: 'ats-scanner', status: 'pending' },
   'verifier': { step: 'verifier', status: 'pending' },
+  'ats-scanner': { step: 'ats-scanner', status: 'pending' },
 };
 
 export const EMPTY_SESSION: PipelineSession = {

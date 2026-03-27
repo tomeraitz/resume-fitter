@@ -191,8 +191,8 @@ export default defineBackground(() => {
 const STEP_NAMES: Record<number, AgentStep> = {
   1: 'hiring-manager',
   2: 'rewrite-resume',
-  3: 'ats-scanner',
-  4: 'verifier',
+  3: 'verifier',
+  4: 'ats-scanner',
 };
 
 const VALID_SSE_EVENTS = new Set(['step', 'done', 'error']);

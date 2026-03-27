@@ -11,8 +11,8 @@ type StepStatus = 'pending' | 'running' | 'completed' | 'error';
 type AgentResultData =
   | { step: 'hiring-manager'; matchScore: number; missingKeywords: string[]; summary: string; cvLanguage: string }
   | { step: 'rewrite-resume'; updatedCvHtml: string; keywordsNotAdded: { keyword: string; reason: string }[] }
-  | { step: 'ats-scanner'; atsScore: number; problemAreas: string[]; updatedCvHtml: string }
-  | { step: 'verifier'; verifiedCv: string; flaggedClaims: string[] };
+  | { step: 'verifier'; verifiedCv: string; flaggedClaims: string[] }
+  | { step: 'ats-scanner'; atsScore: number; problemAreas: string[] };
 
 interface AgentResult {
   step: AgentStep;

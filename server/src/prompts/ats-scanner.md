@@ -13,7 +13,7 @@ Analyze the CV for all issues that would cause an ATS bot to fail to extract or 
 
 ## Output Contract
 
-You must return a single JSON object with exactly these three fields:
+You must return a single JSON object with exactly these two fields:
 
 ```json
 {
@@ -21,15 +21,15 @@ You must return a single JSON object with exactly these three fields:
   "problemAreas": [
     "Skills section uses non-standard header 'Tech Stack' — prefer 'Skills'",
     "Date format inconsistency: mix of 'Jan 2023' and '2023-01'"
-  ],
-  "updatedCvHtml": "<section><h2>Skills</h2><ul><li>Docker</li></ul></section>"
+  ]
 }
 ```
 
 Field descriptions:
 - `atsScore`: integer 0–100 representing how ATS-compatible the CV is. 100 = no parsing issues detected, 0 = severely problematic. Deduct points for each identified issue based on severity.
 - `problemAreas`: array of 0–10 strings. Each string is a concrete, specific observation about a parsing problem, with enough detail to be actionable. Empty array `[]` if no issues are found. Do not include generic advice — every item must reference something specific in the CV.
-- `updatedCvHtml`: the full corrected HTML with all identified ATS issues fixed. Apply these corrections: replace table-based layouts with a single-column `<section>` structure, normalize non-standard section headers to standard names (e.g. rename "Tech Stack" to "Skills"), remove or replace hidden elements (`display:none`, `visibility:hidden`), replace icon-font contact info with plain text, and standardize date formats. Preserve all CV content exactly — do not fabricate experience, skills, or any other information. Do not change the language of the CV.
+
+**Important**: Do NOT return a modified version of the CV HTML. Your role is strictly analytical — score and report problems only. The CV HTML will not be changed by this step.
 
 ## Constraints
 
@@ -124,6 +124,24 @@ Output:
   "problemAreas": [
     "Language mismatch: CV is in Hebrew but job description is in English — most ATS systems used by English-speaking employers parse English text only; consider providing an English version",
     "RTL text direction may cause left-to-right ATS parsers to reverse word order in extracted text"
+  ]
+}
+```
+
+### Example 4 — PDF-converted CV with absolute positioning
+
+Input CV was converted from PDF and uses absolutely-positioned `<span>` elements with pixel coordinates and SVG font paths.
+
+Output:
+```json
+{
+  "atsScore": 35,
+  "problemAreas": [
+    "All text is absolutely positioned with pixel coordinates — ATS parsers read DOM order, not visual position, so text extraction order will be wrong",
+    "Text rendered via SVG <use> elements referencing font glyph paths — ATS cannot extract text from SVG path definitions",
+    "No semantic HTML structure: missing <section>, <h2>, <ul> elements — ATS cannot identify section boundaries",
+    "Contact information embedded in SVG glyphs rather than plain text <a> or <span> elements",
+    "No dedicated Skills section — skills may be scattered across absolutely-positioned text spans"
   ]
 }
 ```

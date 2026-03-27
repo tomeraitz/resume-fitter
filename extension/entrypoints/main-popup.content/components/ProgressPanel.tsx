@@ -24,15 +24,6 @@ const STEP_CONFIG = [
     completedDesc: () => 'Resume rewritten successfully',
   },
   {
-    key: 'ats-scanner' as AgentStep,
-    label: 'ATS Compatibility Scan',
-    activeDesc: 'Scanning for ATS compatibility...',
-    completedDesc: (data: AgentResultData) => {
-      if (data.step !== 'ats-scanner') return '';
-      return `ATS score: ${data.atsScore} \u00b7 ${data.problemAreas.length} issues found`;
-    },
-  },
-  {
     key: 'verifier' as AgentStep,
     label: 'Accuracy Verification',
     activeDesc: 'Cross-checking claims...',
@@ -41,6 +32,15 @@ const STEP_CONFIG = [
       return data.flaggedClaims.length === 0
         ? 'All claims verified'
         : `${data.flaggedClaims.length} claims flagged`;
+    },
+  },
+  {
+    key: 'ats-scanner' as AgentStep,
+    label: 'ATS Compatibility Scan',
+    activeDesc: 'Scanning for ATS compatibility...',
+    completedDesc: (data: AgentResultData) => {
+      if (data.step !== 'ats-scanner') return '';
+      return `ATS score: ${data.atsScore} \u00b7 ${data.problemAreas.length} issues found`;
     },
   },
 ] as const;

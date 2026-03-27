@@ -116,8 +116,8 @@ describe('ProgressPanel', () => {
     const expectedLabels = [
       'Hiring Manager Review',
       'Rewriting Resume',
-      'ATS Compatibility Scan',
       'Accuracy Verification',
+      'ATS Compatibility Scan',
     ];
 
     const labelElements = container.querySelectorAll('[aria-label]');

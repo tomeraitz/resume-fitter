@@ -176,7 +176,6 @@ describe('usePipeline', () => {
       step: 'ats-scanner',
       atsScore: 92,
       problemAreas: [],
-      updatedCvHtml: '<p>CV</p>',
     };
     steps['verifier'].data = {
       step: 'verifier',

@@ -65,7 +65,7 @@ export async function setExtractedJob(job: ExtractedJobDetails | null): Promise<
 /**
  * Strip large intermediate HTML from step results to reduce session size.
  * The UI only needs matchScore, atsScore, and flaggedClaims — not the
- * intermediate CV HTML blobs stored by rewrite-resume, ats-scanner, and verifier.
+ * intermediate CV HTML blobs stored by rewrite-resume and verifier.
  */
 function stripIntermediateHtml(session: PipelineSession): PipelineSession {
   const steps = { ...session.steps };
@@ -75,14 +75,6 @@ function stripIntermediateHtml(session: PipelineSession): PipelineSession {
     steps['rewrite-resume'] = {
       ...rewrite,
       data: { ...rewrite.data, updatedCvHtml: '' },
-    };
-  }
-
-  const ats = steps['ats-scanner'];
-  if (ats.data && 'updatedCvHtml' in ats.data) {
-    steps['ats-scanner'] = {
-      ...ats,
-      data: { ...ats.data, updatedCvHtml: '' },
     };
   }
 
@@ -101,9 +93,9 @@ export async function setGeneratedCv(cv: string): Promise<void> {
   console.log(`[pipeline] setGeneratedCv called — cvLen=${cv.length}`);
   try {
     // Strip intermediate HTML from steps to stay within ~1 MB storage.session quota.
-    // The session accumulates updatedCvHtml from rewrite-resume, ats-scanner, and
-    // verifiedCv from verifier — plus the final generatedCv. Without stripping,
-    // the total easily exceeds the quota and the write is silently dropped.
+    // The session accumulates updatedCvHtml from rewrite-resume and verifiedCv from
+    // verifier — plus the final generatedCv. Without stripping, the total easily
+    // exceeds the quota and the write is silently dropped.
     await mutatePipelineSession((session) => {
       const stripped = stripIntermediateHtml(session);
       return {
