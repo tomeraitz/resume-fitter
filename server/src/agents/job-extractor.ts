@@ -14,6 +14,9 @@ export async function runJobExtractor(
   html: string,
 ): Promise<ExtractionResult> {
   const strippedText = stripHtml(html);
+  console.log(`[extract] starting — htmlLen=${html.length} strippedLen=${strippedText.length}`);
+  console.log(`[extract] strippedText (first 500): ${strippedText.slice(0, 500)}`);
+
   const userPrompt = `<page_content>\n${strippedText}\n</page_content>`;
   const raw = await modelService.completeFast(systemPrompt, userPrompt);
   const text = raw
@@ -21,5 +24,15 @@ export async function runJobExtractor(
     .replace(/\s*```\s*$/i, "")
     .trim();
   const parsed: unknown = JSON.parse(text);
-  return ExtractionResultSchema.parse(parsed);
+  const result = ExtractionResultSchema.parse(parsed);
+
+  if (result.isJobPosting) {
+    const jd = result.jobDetails;
+    console.log(`[extract] done — isJobPosting=true title="${jd.title}" company="${jd.company}" descriptionLen=${jd.description.length}`);
+    console.log(`[extract] jobDescription (first 500): ${jd.description.slice(0, 500)}`);
+  } else {
+    console.log(`[extract] done — isJobPosting=false reason="${result.reason.slice(0, 200)}"`);
+  }
+
+  return result;
 }

@@ -20,9 +20,7 @@ pipelineRouter.post("/", requireAuth, rateLimiter, async (req, res) => {
     return;
   }
 
-  console.log(`[pipeline] === RAW HTML RECEIVED FROM CLIENT (${parsed.data.cvTemplate.length} chars) ===`);
-  console.log(parsed.data.cvTemplate);
-  console.log(`[pipeline] === END RAW HTML ===`);
+  console.log(`[pipeline] === RAW HTML RECEIVED FROM CLIENT (${parsed.data.cvTemplate.length} chars) first500=${parsed.data.cvTemplate.slice(0, 500)} ===`);
 
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
