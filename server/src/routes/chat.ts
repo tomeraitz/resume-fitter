@@ -36,7 +36,9 @@ chatRouter.post("/", requireAuth, rateLimiter, async (req, res) => {
     const chatResult = await runCvChat(modelService, message, currentCv, history);
 
     // Step 2: verify the edited CV (same quality gate as the pipeline)
-    const verifierResult = await runVerifier(modelService, chatResult.updatedCvHtml, history);
+    // cvLanguage is not detected in the chat route — pass "en" as a neutral default;
+    // the verifier uses it only for language-aware claim comparisons.
+    const verifierResult = await runVerifier(modelService, chatResult.updatedCvHtml, "en", history);
 
     res.json({
       updatedCvHtml: verifierResult.verifiedCv,

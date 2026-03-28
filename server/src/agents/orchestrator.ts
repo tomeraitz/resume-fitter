@@ -33,11 +33,15 @@ export async function runPipeline(
   onStepComplete?.(hmStep);
   console.log(`[pipeline] step 1/4: hiring-manager done (${hmStep.durationMs}ms)`);
 
+  console.log(`[orchestrator] hiring-manager output — missingKeywords=${JSON.stringify(hiringManagerResult.missingKeywords)} rewriteInstructions="${hiringManagerResult.rewriteInstructions.slice(0, 200)}"`);
+
   console.log("[pipeline] step 2/4: rewrite-resume");
   const rewriteResumeStart = Date.now();
   const rewriteResumeResult = await runRewriteResume(
     modelService,
     hiringManagerResult.missingKeywords,
+    hiringManagerResult.rewriteInstructions,
+    request.jobDescription,
     request.cvTemplate,
     hiringManagerResult.cvLanguage,
   );
@@ -45,12 +49,14 @@ export async function runPipeline(
   steps.push(rrStep);
   onStepComplete?.(rrStep);
   console.log(`[pipeline] step 2/4: rewrite-resume done (${rrStep.durationMs}ms)`);
+  console.log(`[orchestrator] rewrite-resume output — updatedCvHtmlLen=${rewriteResumeResult.updatedCvHtml.length} keywordsNotAdded=${JSON.stringify(rewriteResumeResult.keywordsNotAdded.map((k) => k.keyword))}`);
 
   console.log("[pipeline] step 3/4: verifier");
   const verifierStart = Date.now();
   const verifierResult = await runVerifier(
     modelService,
     rewriteResumeResult.updatedCvHtml,
+    hiringManagerResult.cvLanguage,
     request.history,
   );
   // Omit verifiedCv from the step event — it's sent separately in the "done"
@@ -61,6 +67,7 @@ export async function runPipeline(
   steps.push(verifierStep);
   onStepComplete?.(verifierStep);
   console.log(`[pipeline] step 3/4: verifier done (${verifierStep.durationMs}ms)`);
+  console.log(`[orchestrator] verifier output — verifiedCvLen=${verifierResult.verifiedCv.length} flaggedClaims=${verifierResult.flaggedClaims.length}`);
 
   console.log("[pipeline] step 4/4: ats-scanner (analysis only)");
   const atsScannerStart = Date.now();

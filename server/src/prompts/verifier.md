@@ -11,6 +11,10 @@ You will receive a user message containing three fields:
 
 Read every claim in the CV — job titles, responsibilities, achievements, technologies, metrics, team sizes, timelines, and skills — and cross-reference each against the history. For any claim that cannot be verified or that overstates what the history supports, flag it. Never silently remove content — either keep the claim as-is and flag it, or soften the language and flag what was changed. Return the final verified CV HTML and the list of flagged claims.
 
+## When `history` is absent
+
+If `history` is null, empty, undefined, or not provided, you have no ground truth to verify against. In this case you must return `updatedCvHtml` completely unchanged as `verifiedCv` and return an empty `flaggedClaims` array `[]`. Do NOT soften, rephrase, or remove any claims when there is no history to compare against. Pass the CV through as-is.
+
 ## Output Contract
 
 You must return a single JSON object with exactly these two fields:

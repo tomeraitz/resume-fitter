@@ -18,10 +18,11 @@ export type VerifierOutput = z.infer<typeof VerifierOutputSchema>;
 export async function runVerifier(
   modelService: ModelService,
   updatedCvHtml: string,
+  cvLanguage: string,
   history?: string,
 ): Promise<VerifierOutput> {
-  console.log(`[verifier] starting — cvHtmlLen=${updatedCvHtml.length} hasHistory=${!!history}`);
-  const userPrompt = JSON.stringify({ updatedCvHtml, history });
+  console.log(`[verifier] starting — cvHtmlLen=${updatedCvHtml.length} hasHistory=${!!history} cvLanguage=${cvLanguage}`);
+  const userPrompt = JSON.stringify({ updatedCvHtml, history, cvLanguage });
   const raw = await modelService.completeFast(systemPrompt, userPrompt);
   console.log(`[verifier] model response received — rawLen=${raw.length}`);
   const text = raw

@@ -13,6 +13,7 @@ export const HiringManagerOutputSchema = z.object({
   matchScore: z.number(),
   cvLanguage: z.string(),
   missingKeywords: z.array(z.string()),
+  rewriteInstructions: z.string(),
   summary: z.string(),
 });
 
@@ -24,6 +25,9 @@ export async function runHiringManager(
   cvTemplate: string,
   history?: string,
 ): Promise<HiringManagerOutput> {
+  console.log(`[hiring-manager] starting — jobDescLen=${jobDescription.length} cvTemplateLen=${cvTemplate.length} hasHistory=${!!history}`);
+  console.log(`[hiring-manager] jobDescription (first 500): ${jobDescription.slice(0, 500)}`);
+
   const userPrompt = JSON.stringify({ jobDescription, cvTemplate: stripHtml(cvTemplate), history });
   const raw = await modelService.complete(systemPrompt, userPrompt);
   const text = raw
@@ -31,5 +35,10 @@ export async function runHiringManager(
     .replace(/\s*```\s*$/i, "")
     .trim();
   const parsed: unknown = JSON.parse(text);
-  return HiringManagerOutputSchema.parse(parsed);
+  const result = HiringManagerOutputSchema.parse(parsed);
+
+  console.log(`[hiring-manager] done — matchScore=${result.matchScore} cvLanguage=${result.cvLanguage} missingKeywords(${result.missingKeywords.length})=${JSON.stringify(result.missingKeywords)}`);
+  console.log(`[hiring-manager] rewriteInstructions: ${result.rewriteInstructions}`);
+
+  return result;
 }
